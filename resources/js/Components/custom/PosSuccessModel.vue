@@ -238,6 +238,14 @@ const productRows = props.products
           .info-row small {
               font-weight: normal;
           }
+          .info-column {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+          }
+          .info-item {
+              text-align: left;
+          }
           table {
               width: 100%;
               font-size: 12px;
@@ -289,12 +297,12 @@ const productRows = props.products
   <body>
       <div class="receipt-container">
                 <div class="header">
-                  <img src="/images/billlogo.png" style="width: 130px; height: 130px;" />
-           ${companyInfo?.value?.name ? `<h1>${companyInfo.value.name}</h1>` : ''}
+                  <img src="/images/billlogo.png" style="width: 250px; height: 130px;" />
   ${companyInfo?.value?.address ? `<p>${companyInfo.value.address}</p>` : ''}
   ${(companyInfo?.value?.phone || companyInfo?.value?.phone2 || companyInfo?.value?.email)
             ? `<p>${companyInfo.value.phone || ''} | ${companyInfo.value.phone2 || ''}  ${companyInfo.value.email || ''}</p>`
             : ''}
+  ${companyInfo?.value?.website ? `<p style="font-weight: ;">${companyInfo.value.website}</p>` : ''}
 
           </div>
 
@@ -304,23 +312,25 @@ const productRows = props.products
 
           <div class="section">
               <div class="info-row">
-                  <div>
-                      <p>Date:</p>
-                      <small>${new Date().toLocaleDateString()} </small>
+                  <div class="info-column">
+                      <div class="info-item">
+                          <p>Date:</p>
+                          <small>${new Date().toLocaleDateString()} </small>
+                      </div>
+                      <div class="info-item">
+                          <p>Customer:</p>
+                          <small>${props.customer.name}</small>
+                      </div>
                   </div>
-                  <div>
-                      <p>Order No:</p>
-                      <small>${props.orderid}</small>
-                  </div>
-              </div>
-              <div class="info-row">
-                  <div>
-                      <p>Customer:</p>
-                      <small>${props.customer.name}</small>
-                  </div>
-                  <div>
-                      <p>Cashier:</p>
-                      <small>${props.cashier.name}</small>
+                  <div class="info-column">
+                      <div class="info-item">
+                          <p>Order No:</p>
+                          <small>${props.orderid}</small>
+                      </div>
+                      <div class="info-item">
+                          <p>Cashier:</p>
+                          <small>${props.cashier.name}</small>
+                      </div>
                   </div>
               </div>
           </div>
@@ -388,9 +398,7 @@ const productRows = props.products
               </div>
           </div>
           <div class="footer">
- <p style="font-weight:bold; font-style:italic; padding:4px 0; font-size:14px; color:#000;">
-  මාරු කිරීම සඳහා දින 07 ඇතුලත බිල්පත සමග පැමිණෙන්න.
-</p>
+
               <p>THANK YOU COME AGAIN</p>
               <p class="italic">Let the quality define its own standards</p>
                <p style="font-weight: bold;">Powered by JAAN Network Ltd.</p>
