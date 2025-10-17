@@ -27,15 +27,15 @@
                         </div>
                         <div class="flex justify-center items-center space-x-4 pt-4 mt-4">
                             <p
-                                class="cursor-pointer bg-blue-600 text-white font-bold uppercase tracking-wider px-4 shadow-xl rounded py-4 rounded-xl">
+                                class="cursor-pointer bg-blue-600 text-white font-bold uppercase tracking-wider px-4 shadow-xl py-4 rounded-xl">
                                 Send Reciept To Email
                             </p>
                             <p @click="handlePrintReceipt"
-                                class="cursor-pointer bg-blue-600 text-white font-bold uppercase tracking-wider px-4 shadow-xl rounded py-4 rounded-xl">
+                                class="cursor-pointer bg-blue-600 text-white font-bold uppercase tracking-wider px-4 shadow-xl py-4 rounded-xl">
                                 Print Receipt
                             </p>
                             <p @click="$emit('update:open', false)"
-                                class="cursor-pointer bg-red-600 text-white font-bold uppercase tracking-wider px-4 shadow-xl rounded py-4 rounded-xl">
+                                class="cursor-pointer bg-red-600 text-white font-bold uppercase tracking-wider px-4 shadow-xl py-4 rounded-xl">
                                 Close
                             </p>
                         </div>
@@ -296,11 +296,11 @@ const productRows = props.products
   </head>
   <body>
       <div class="receipt-container">
-                <div class="header">
-                  <img src="/images/billlogo.png" style="width: 250px; height: 130px;" />
+                                <div class="header">
+                                    <img src="/images/billlogo.png" style="width: 160px; height: auto; max-height: 90px;" />
   ${companyInfo?.value?.address ? `<p>${companyInfo.value.address}</p>` : ''}
   ${(companyInfo?.value?.phone || companyInfo?.value?.phone2 || companyInfo?.value?.email)
-            ? `<p>${companyInfo.value.phone || ''} | ${companyInfo.value.phone2 || ''}  ${companyInfo.value.email || ''}</p>`
+            ? `<p>${companyInfo.value.phone || ''}  ${companyInfo.value.phone2 || ''}  ${companyInfo.value.email || ''}</p>`
             : ''}
   ${companyInfo?.value?.website ? `<p style="font-weight: ;">${companyInfo.value.website}</p>` : ''}
 
@@ -399,8 +399,10 @@ const productRows = props.products
           </div>
           <div class="footer">
 
-              <p>THANK YOU COME AGAIN</p>
-              <p class="italic">Let the quality define its own standards</p>
+              <p>THANK YOU FOR SHOPPING AT HAPPY BAMBINOS CLOTHING</p>
+
+              <p class="italic">
+             Exchange is possible withing 7 days of purchase. Product need to be in original condition & accompanied with receipt & price tag.Discounted & promotional item,Toys,baby care products, party dresses, baby pants & diapers once sold will not be exchange or Refunded. </p>
                <p style="font-weight: bold;">Powered by JAAN Network Ltd.</p>
                <p>${new Date().toLocaleTimeString()} </p>
           </div>
