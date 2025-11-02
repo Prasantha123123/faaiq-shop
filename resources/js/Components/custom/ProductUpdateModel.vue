@@ -71,6 +71,7 @@
                     <input
                       v-model="form.batch_no"
                       type="text"
+                      readonly
                       id="batch_no"
                       class="w-full px-4 py-2 mt-2 text-black rounded-md focus:outline-none focus:ring focus:ring-blue-600"
                     />

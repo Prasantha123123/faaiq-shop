@@ -325,24 +325,8 @@
                 </div>
                 
                 <div class="flex items-center gap-8">
-                  <div class="w-full">
-                    <label class="block text-sm font-medium text-gray-300"
-                      >Batch No:</label
-                    >
-                    <input
-                      v-model="form.batch_no"
-                      type="text"
-                      id="batch_no"
-                      placeholder="Enter batch no"
-                      class="w-full px-4 py-2 mt-2 text-black rounded-md focus:outline-none focus:ring focus:ring-blue-600"
-                    />
-                    <span
-                      v-if="form.errors.batch_no"
-                      class="mt-4 text-red-500"
-                      >{{ form.errors.batch_no }}</span
-                    >
-                  </div>
-                  <div class="w-full">
+
+                   <div class="w-full">
                       <label class="block text-sm font-medium text-gray-300"
                         >Product Name:</label
                       >
@@ -358,6 +342,25 @@
                         form.errors.name
                       }}</span>
                     </div>
+                  <div class="w-full hidden">
+                    <label class="block text-sm font-medium text-gray-300"
+                      >Batch No:</label
+                    >
+                    <input
+                      v-model="form.batch_no"
+                      type="text"
+                      id="batch_no"
+                      
+                      placeholder="Enter batch no"
+                      class="w-full px-4 py-2 mt-2 text-black rounded-md focus:outline-none focus:ring focus:ring-blue-600"
+                    />
+                    <span
+                      v-if="form.errors.batch_no"
+                      class="mt-4 text-red-500"
+                      >{{ form.errors.batch_no }}</span
+                    >
+                  </div>
+                 
                 </div>
                 
                 <div>
@@ -615,6 +618,9 @@ import {
 } from "@headlessui/vue";
 import { ref, computed, watch } from "vue";
 import { useForm } from "@inertiajs/vue3";
+import axios from "axios";
+
+
 
 const emit = defineEmits(["update:open"]);
 
@@ -783,4 +789,27 @@ const submitCategory = () => {
     },
   });
 };
+
+watch(
+  () => form.name,
+  async (newVal) => {
+    // Stop if empty
+    if (!newVal || newVal.trim() === "") {
+      form.batch_no = "";
+      return;
+    }
+
+    // Stop if user already typed custom batch
+    if (form.batch_no && form.batch_no.trim() !== "") return;
+
+    try {
+      const response = await axios.get("/products/next-batch", {
+        params: { name: newVal },
+      });
+      form.batch_no = response.data.batch_no || "";
+    } catch (error) {
+      console.error("Error generating batch number:", error);
+    }
+  }
+);
 </script>

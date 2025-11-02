@@ -237,6 +237,7 @@
 
                   <p>{{ product.color?.name || "N/A" }}</p>
                 </div>
+                
 
                 <div class="flex space-x-1 text-gray-400">
                   <p class="font-bold">Size:</p>
@@ -246,15 +247,20 @@
                 </div>
               </div>
 
-              <div class="flex items-center justify-center w-full space-x-4">
-                <p
-                  class="flex items-center space-x-2 text-justify text-gray-400"
-                >
-                  Supplier :
+             <div class="flex flex-wrap items-center justify-between w-full text-gray-400">
+  <!-- Batch -->
+  <div class="flex items-center space-x-2">
+    <span class="font-bold">Batch No:</span>
+    <span>{{ product.batch_no || "N/A" }}</span>
+  </div>
 
-                  <b> &nbsp; {{ product.supplier?.name || "N/A" }} </b>
-                </p>
-              </div>
+  <!-- Supplier -->
+  <div class="flex items-center space-x-2">
+    <span class="font-bold">Supplier:</span>
+    <span>{{ product.supplier?.name || "N/A" }}</span>
+  </div>
+</div>
+
               <div class="flex items-center justify-between">
                 <p
                   v-if="product.stock_quantity > 0"

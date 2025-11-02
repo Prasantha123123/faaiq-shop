@@ -378,6 +378,98 @@
         </div>
     </div>
 
+
+    <!-- BATCH SELECT MODAL -->
+<transition
+  enter-active-class="duration-200 ease-out"
+  enter-from-class="opacity-0"
+  enter-to-class="opacity-100"
+  leave-active-class="duration-150 ease-in"
+  leave-from-class="opacity-100"
+  leave-to-class="opacity-0"
+>
+  <div
+    v-if="isBatchModalOpen"
+    class="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+  >
+    <div
+      class="relative w-[95%] max-w-lg bg-slate-950/95 border border-slate-700 rounded-2xl shadow-[0_20px_45px_rgba(0,0,0,0.45)] p-5 space-y-4"
+    >
+      <!-- close button -->
+      <button
+        @click="closeBatchModal"
+        class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-slate-200 hover:bg-slate-700"
+      >
+        ✕
+      </button>
+
+      <!-- header -->
+      <div class="flex items-center space-x-2">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-200">
+          <i class="ri-price-tag-3-line text-xl"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white tracking-wide">
+            Select Batch / Price
+          </h3>
+          <p class="text-xs text-slate-400">
+            Same product name found. Pick the correct batch to bill.
+          </p>
+        </div>
+      </div>
+
+      <!-- list -->
+      <div class="space-y-3 max-h-72 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700/80 scrollbar-track-transparent">
+        <div
+          v-for="bp in batchOptions"
+          :key="bp.id"
+          @click="selectBatchProduct(bp)"
+          class="flex items-center justify-between gap-3 rounded-xl bg-slate-900/70 border border-slate-700/60 px-4 py-3 cursor-pointer hover:border-blue-500 hover:bg-slate-900 transition-all"
+        >
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-white">
+              {{ bp.name }}
+            </p>
+            <p class="text-xs text-slate-300 mt-1 flex gap-3 flex-wrap">
+              <span class="flex items-center gap-1">
+                <span class="text-slate-400">Batch:</span>
+                <span class="font-mono text-slate-100">
+                  {{ bp.batch_no || "N/A" }}
+                </span>
+              </span>
+              <span class="flex items-center gap-1">
+                <span class="text-slate-400">Supplier:</span>
+                <span class="text-slate-100">
+                  {{ bp.supplier?.name || "N/A" }}
+                </span>
+              </span>
+            </p>
+          </div>
+          <div class="flex flex-col items-end">
+            <p class="text-base font-bold text-emerald-300">
+              {{ bp.selling_price }} LKR
+            </p>
+            <p class="text-[10px] uppercase tracking-wide text-slate-500 mt-1">
+              tap to select
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- footer -->
+      <div class="flex justify-end pt-1">
+        <button
+          @click="closeBatchModal"
+          class="px-4 py-2 text-sm font-medium text-slate-200 bg-slate-800/70 rounded-lg hover:bg-slate-700"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</transition>
+
+
     <!-- MODALS -->
     <PosSuccessModel
         :open="isSuccessModalOpen"
@@ -589,6 +681,10 @@ const couponForm = useForm({
 let barcode = "";
 let timeout;
 
+const isBatchModalOpen = ref(false);
+const batchOptions = ref([]);
+const baseProductForBatch = ref(null); // barcode + common fields
+
 const submitCoupon = async () => {
     try {
         const response = await axios.post(route("pos.getCoupon"), {
@@ -615,108 +711,122 @@ const submitCoupon = async () => {
     }
 };
 
-// UPDATED submitBarcode with default color_id
-const submitBarcode = async () => {
-    try {
-        const response = await axios.post(route("pos.getProduct"), {
-            barcode: form.barcode,
-        });
+ const submitBarcode = async () => {
+  try {
+    const response = await axios.post(route("pos.getProduct"), {
+      barcode: form.barcode,
+    });
 
-        const {
-            product: fetchedProduct,
-            products: fetchedProducts,
-            colorOptions,
-            error: fetchedError,
-        } = response.data;
+    const {
+      product: fetchedProduct,
+      products: fetchedProducts,
+      colorOptions,
+      error: fetchedError,
+    } = response.data;
 
-        // Save color options for this barcode
-        if (colorOptions && Array.isArray(colorOptions)) {
-            barcodeColorMap.value[form.barcode] = colorOptions;
-        }
-
-        // Single product
-        if (fetchedProduct) {
-            if (fetchedProduct.stock_quantity < 1) {
-                isAlertModalOpen.value = true;
-                message.value = "Product is out of stock";
-                return;
-            }
-
-            const existingProduct = products.value.find(
-                (item) => item.id === fetchedProduct.id
-            );
-
-            if (existingProduct) {
-                existingProduct.quantity += 1;
-            } else {
-                // Set default color_id if not present
-                const defaultColorId = colorOptions && colorOptions.length > 0 
-                    ? colorOptions[0].color_id 
-                    : (fetchedProduct.color_id || null);
-
-                products.value.push({
-                    ...fetchedProduct,
-                    quantity: 1,
-                    apply_discount: false,
-                    barcode: form.barcode,
-                    color_id: defaultColorId, // Set default color
-                });
-            }
-
-            product.value = fetchedProduct;
-            error.value = null;
-            form.barcode = "";
-            return;
-        }
-
-        // Multiple products (same barcode, different colors)
-        if (fetchedProducts && fetchedProducts.length > 0) {
-            const first = fetchedProducts[0];
-
-            if (first.stock_quantity < 1) {
-                isAlertModalOpen.value = true;
-                message.value = "Product is out of stock";
-                return;
-            }
-
-            const exists = products.value.find((p) => p.id === first.id);
-            if (exists) {
-                exists.quantity += 1;
-            } else {
-                // Set default color_id for multiple products scenario
-                const defaultColorId = colorOptions && colorOptions.length > 0 
-                    ? colorOptions[0].color_id 
-                    : (first.color_id || null);
-
-                products.value.push({
-                    ...first,
-                    quantity: 1,
-                    apply_discount: false,
-                    barcode: form.barcode,
-                    color_id: defaultColorId, // Set default color
-                });
-            }
-
-            form.barcode = "";
-            error.value = null;
-            return;
-        }
-
-        if (fetchedError) {
-            isAlertModalOpen.value = true;
-            message.value = fetchedError;
-            error.value = fetchedError;
-        }
-    } catch (err) {
-        if (err.response?.status === 422) {
-            isAlertModalOpen.value = true;
-            message.value = err.response.data.message;
-        }
-
-        console.error("An error occurred:", err.response?.data || err.message);
-        error.value = "An unexpected error occurred. Please try again.";
+    // Save color options for this barcode
+    if (colorOptions && Array.isArray(colorOptions)) {
+      barcodeColorMap.value[form.barcode] = colorOptions;
     }
+
+    // ✅ CASE 1: single product (normal)
+    if (fetchedProduct) {
+      if (fetchedProduct.stock_quantity < 1) {
+        isAlertModalOpen.value = true;
+        message.value = "Product is out of stock";
+        return;
+      }
+
+      // check if POS already has same product+batch (id)
+      const existingProduct = products.value.find(
+        (item) => item.id === fetchedProduct.id
+      );
+
+      if (existingProduct) {
+        existingProduct.quantity += 1;
+      } else {
+        const defaultColorId =
+          colorOptions && colorOptions.length > 0
+            ? colorOptions[0].color_id
+            : fetchedProduct.color_id || null;
+
+        products.value.push({
+          ...fetchedProduct,
+          quantity: 1,
+          apply_discount: false,
+          barcode: form.barcode,
+          color_id: defaultColorId,
+        });
+      }
+
+      product.value = fetchedProduct;
+      error.value = null;
+      form.barcode = "";
+      return;
+    }
+
+    // ✅ CASE 2: multiple products returned → very likely same product name with different batch/price
+    if (fetchedProducts && fetchedProducts.length > 0) {
+      // open batch modal instead of auto-picking first
+      isBatchModalOpen.value = true;
+      batchOptions.value = fetchedProducts;
+      // keep common info (barcode)
+      baseProductForBatch.value = {
+        barcode: form.barcode,
+        colorOptions: colorOptions ?? [],
+      };
+      form.barcode = "";
+      return;
+    }
+
+    if (fetchedError) {
+      isAlertModalOpen.value = true;
+      message.value = fetchedError;
+      error.value = fetchedError;
+    }
+  } catch (err) {
+    if (err.response?.status === 422) {
+      isAlertModalOpen.value = true;
+      message.value = err.response.data.message;
+    }
+
+    console.error("An error occurred:", err.response?.data || err.message);
+    error.value = "An unexpected error occurred. Please try again.";
+  }
 };
+const selectBatchProduct = (p) => {
+  // if that product already in cart (same id) → just +1
+  const exists = products.value.find((item) => item.id === p.id);
+
+  const defaultColorId =
+    baseProductForBatch.value?.colorOptions?.length > 0
+      ? baseProductForBatch.value.colorOptions[0].color_id
+      : p.color_id || null;
+
+  if (exists) {
+    exists.quantity += 1;
+  } else {
+    products.value.push({
+      ...p,
+      quantity: 1,
+      apply_discount: false,
+      barcode: baseProductForBatch.value?.barcode ?? p.barcode ?? null,
+      color_id: defaultColorId,
+    });
+  }
+
+  isBatchModalOpen.value = false;
+  batchOptions.value = [];
+  baseProductForBatch.value = null;
+};
+
+
+const closeBatchModal = () => {
+  isBatchModalOpen.value = false;
+  batchOptions.value = [];
+  baseProductForBatch.value = null;
+};
+
 
 const handleScannerInput = (event) => {
     clearTimeout(timeout);

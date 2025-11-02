@@ -186,85 +186,136 @@ $productsQuery = Product::with('category', 'color', 'size', 'supplier')
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        if (!Gate::allows('hasRole', ['Admin'])) {
-            abort(403, 'Unauthorized');
-        }
-
-        $validated = $request->validate([
-            'category_id' => 'nullable|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|max:50',
-            // 'code' => [
-            //     'string',
-            //     'max:50',
-            //     Rule::unique('products')->whereNull('deleted_at'),
-            // ],
-            'size_id' => 'nullable|exists:sizes,id',
-            'color_id' => 'nullable|exists:colors,id',
-            'cost_price' => 'nullable|numeric|min:0',
-            'selling_price' => [
-                'nullable',
-                'numeric',
-                'min:0',
-                function ($attribute, $value, $fail) use ($request) {
-                    if ($value < $request->input('cost_price')) {
-                        $fail('The selling price must be greater than or equal to the cost price.');
-                    }
-                },
-            ],
-            'discounted_price' => 'nullable|numeric|min:0',
-            'stock_quantity' => 'nullable|integer|min:0',
-            'discount' => 'nullable|numeric|min:0|max:100',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'barcode' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'expire_date' => 'nullable|date',
-            'batch_no' => 'nullable|max:50',
-            'purchase_date' => 'nullable|date',
-        ]);
-
-        // dd($validated);
-
-        try {
-            // Handle image upload
-            if ($request->hasFile('image')) {
-                $fileExtension = $request->file('image')->getClientOriginalExtension();
-                $fileName = 'product_' . date("YmdHis") . '.' . $fileExtension;
-                $path = $request->file('image')->storeAs('products', $fileName, 'public');
-                $validated['image'] = 'storage/' . $path;
-            }
-
-            if (empty($validated['barcode'])) {
-                $validated['barcode'] = $this->generateUniqueCode(8);
-            }
-            $validated['total_quantity'] = $validated['stock_quantity'] ?? 0;
-            // Create the product
-            $product = Product::create($validated);
-            // $product->update(['code' => 'PROD-' . $product->id]);
-
-            // Add stock transaction if stock quantity is provided
-            $stockQuantity = $validated['stock_quantity'] ?? 0; // Default to 0 if not provided
-            if ($stockQuantity > 0) {
-                StockTransaction::create([
-                    'product_id' => $product->id,
-                    'transaction_type' => 'Added',
-                    'quantity' => $stockQuantity,
-                    'transaction_date' => now(),
-                    'supplier_id' => $validated['supplier_id'] ?? null,
-                ]);
-            }
-
-            // Redirect with success message
-            return redirect()->route('products.index')->banner('Product created successfully');
-        } catch (\Exception $e) {
-            // Log error and redirect back with an error message
-            \Log::error('Error creating product: ' . $e->getMessage());
-
-            return redirect()->back()->with('error', 'An error occurred while creating the product. Please try again.');
-        }
+   public function store(Request $request)
+{
+    if (!Gate::allows('hasRole', ['Admin'])) {
+        abort(403, 'Unauthorized');
     }
+
+    $validated = $request->validate([
+        'category_id' => 'nullable|exists:categories,id',
+        'name' => 'required|string|max:255',
+        'code' => 'nullable|max:50',
+        'size_id' => 'nullable|exists:sizes,id',
+        'color_id' => 'nullable|exists:colors,id',
+        'cost_price' => 'nullable|numeric|min:0',
+        'selling_price' => [
+            'nullable',
+            'numeric',
+            'min:0',
+            function ($attribute, $value, $fail) use ($request) {
+                if ($value < $request->input('cost_price')) {
+                    $fail('The selling price must be greater than or equal to the cost price.');
+                }
+            },
+        ],
+        'discounted_price' => 'nullable|numeric|min:0',
+        'stock_quantity' => 'nullable|integer|min:0',
+        'discount' => 'nullable|numeric|min:0|max:100',
+        'supplier_id' => 'nullable|exists:suppliers,id',
+        'barcode' => 'nullable|string',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'expire_date' => 'nullable|date',
+        'batch_no' => 'nullable|max:50',
+        'purchase_date' => 'nullable|date',
+    ]);
+
+    try {
+        // image
+        if ($request->hasFile('image')) {
+            $fileExtension = $request->file('image')->getClientOriginalExtension();
+            $fileName = 'product_' . date("YmdHis") . '.' . $fileExtension;
+            $path = $request->file('image')->storeAs('products', $fileName, 'public');
+            $validated['image'] = 'storage/' . $path;
+        }
+
+        // barcode auto
+        if (empty($validated['barcode'])) {
+            $validated['barcode'] = $this->generateUniqueCode(8);
+        }
+
+        // ✅ BATCH AUTO — if user didn't type batch_no
+        if (empty($validated['batch_no'])) {
+            // meka thamai main logic eka
+            $validated['batch_no'] = $this->getNextBatchForName($validated['name']);
+        }
+
+        $validated['total_quantity'] = $validated['stock_quantity'] ?? 0;
+
+        $product = Product::create($validated);
+
+        // stock tx
+        $stockQuantity = $validated['stock_quantity'] ?? 0;
+        if ($stockQuantity > 0) {
+            StockTransaction::create([
+                'product_id' => $product->id,
+                'transaction_type' => 'Added',
+                'quantity' => $stockQuantity,
+                'transaction_date' => now(),
+                'supplier_id' => $validated['supplier_id'] ?? null,
+            ]);
+        }
+
+        return redirect()->route('products.index')->banner('Product created successfully');
+    } catch (\Exception $e) {
+        \Log::error('Error creating product: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'An error occurred while creating the product. Please try again.');
+    }
+}
+
+/**
+ * ✅ if same product name already in products table,
+ *      sunlight → BATCH-01, next sunlight → BATCH-02, etc.
+ */
+private function getNextBatchForName(string $productName): string
+{
+    // check all products with this name
+    $lastSameName = \App\Models\Product::where('name', $productName)
+        ->whereNotNull('batch_no')
+        ->orderByDesc('id')
+        ->first();
+
+    // 1st time: no record
+    if (!$lastSameName) {
+        return 'batch-01';
+    }
+
+    // there is at least one batch → read last number
+    $lastBatch = $lastSameName->batch_no; // e.g. BATCH-01 or batch-01
+
+    if (preg_match('/(\d+)$/', $lastBatch, $m)) {
+        $next = (int) $m[1] + 1;
+    } else {
+        // if old data hasn't number, just make it 2
+        $next = 2;
+    }
+
+    return 'batch-' . str_pad($next, 2, '0', STR_PAD_LEFT);
+}
+
+
+// inside ProductController
+
+public function getNextBatchCode(Request $request)
+{
+    $name = $request->input('name');
+
+    if (!$name) {
+        return response()->json(['batch_no' => null]);
+    }
+
+    // Find how many products with same name exist
+    $count = \App\Models\Product::where('name', $name)->count();
+
+    // Next batch number (count + 1)
+    $nextNumber = str_pad($count + 1, 2, '0', STR_PAD_LEFT);
+
+    // Return like "BATCH-01"
+    return response()->json([
+        'batch_no' => 'batch-' . $nextNumber,
+    ]);
+}
+
 
 
 

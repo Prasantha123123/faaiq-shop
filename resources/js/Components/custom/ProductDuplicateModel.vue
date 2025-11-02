@@ -58,7 +58,7 @@
                       >
                     </div>
                   </div>
-                  <div class="w-full">
+                  <div class="w-full  ">
                     <label class="block text-sm font-medium text-gray-300"
                       >Batch No:</label
                     >
@@ -66,6 +66,7 @@
                       v-model="form.batch_no"
                       type="text"
                       id="batch_no"
+                      readonly
                       class="w-full px-4 py-2 mt-2 text-black rounded-md focus:outline-none focus:ring focus:ring-blue-600"
                     />
                     <span

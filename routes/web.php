@@ -114,6 +114,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
   Route::post('/api/products2', [ProductController::class, 'fetchProducts2']);
 
     Route::resource('return-bill', ReturnItemController::class);
+Route::get('/products/next-batch', [ProductController::class, 'getNextBatchCode']);
 
 
 
