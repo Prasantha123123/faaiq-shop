@@ -128,7 +128,8 @@ const productRows = props.products
       const parentRow = `
         <tr>
           <td>
-            ${product.name}
+          ${product.name}${product.color_id ? ` (${product.color.name})` : ``}
+
             ${isPack ? `` : ``}
           </td>
           <td style="text-align:center;">${Number(product.quantity || 0)}</td>

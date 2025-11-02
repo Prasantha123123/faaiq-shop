@@ -66,6 +66,7 @@
                   <!-- Product Code -->
                   <p class="pb-6 text-2xl font-bold text-black">
                     <span class="text-[#00000099] font-normal">Product Code: </span>
+                 
                     {{ selectedProduct?.code ?? "N/A" }}
                   </p>
 
@@ -251,13 +252,19 @@ function generateAndPrintBarcodes() {
   const GUTTER_MM = 0; // Removed gap - configured in printer
   const BARCODE_H_MM = 8; // Reduced from 12
   const NAME_FZ_PX = 9;
-  const PRICE_FZ_PX = 16; // Increased for better visibility
+  const PRICE_FZ_PX = 10; // Increased for better visibility
 
   // Build labels HTML
   const labelsHtml = Array.from({ length: count }).map((_, idx) => `
     <div class="barcode-label">
-      <div class="product-name">${selectedProduct?.code || 'N/A'}</div>
-      <div class="barcode-svg"><svg id="barcode${idx + 1}"></svg></div>
+
+
+        <div class="barcode-svg"><svg id="barcode${idx + 1}"></svg></div>
+        
+        <div class="product-name">${selectedProduct?.code || 'N/A'}</div>
+      <div class="product-name">${selectedProduct?.name || 'N/A'}</div>
+      <div class="product-name">${selectedProduct?.barcode || 'N/A'}</div>
+    
       <div class="bottom-info">${(selectedProduct?.selling_price ?? 'N/A')} LKR</div>
     </div>
   `).join('');

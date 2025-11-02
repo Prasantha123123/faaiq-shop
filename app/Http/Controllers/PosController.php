@@ -47,25 +47,63 @@ class PosController extends Controller
         ]);
     }
 
-    public function getProduct(Request $request)
-    {
-        if (!Gate::allows('hasRole', ['Admin', 'Cashier'])) {
-            abort(403, 'Unauthorized');
-        }
+  public function getProduct(Request $request)
+{
+    if (!Gate::allows('hasRole', ['Admin', 'Cashier'])) {
+        abort(403, 'Unauthorized');
+    }
 
-        $request->validate([
-            'barcode' => 'required',
-        ]);
+    $request->validate([
+        'barcode' => 'required',
+    ]);
 
-        $product = Product::where('barcode', $request->barcode)
-            ->orWhere('code', $request->barcode)
-            ->first();
+    // get all products that share this barcode OR code
+    $products = Product::where('barcode', $request->barcode)
+        ->orWhere('code', $request->barcode)
+        ->with(['color', 'promotion_items.product'])
+        ->get();
 
+    if ($products->isEmpty()) {
         return response()->json([
-            'product' => $product,
-            'error' => $product ? null : 'Product not found',
+            'product' => null,
+            'products' => [],
+            'colorOptions' => [],
+            'error' => 'Product not found',
         ]);
     }
+
+    // build color list ONLY from these products
+    $colorOptions = $products
+        ->filter(fn ($p) => $p->color_id)        // only rows that actually have a color
+        ->map(function ($p) {
+            return [
+                'product_id' => $p->id,          // we keep this to know which product matches which color
+                'color_id'   => $p->color_id,
+                'color_name' => optional($p->color)->name,
+            ];
+        })
+        ->unique('color_id')                     // avoid duplicates
+        ->values();
+
+    // if only one product → return it as before, but ALSO send colorOptions
+    if ($products->count() === 1) {
+        return response()->json([
+            'product'      => $products->first(),
+            'products'     => [],
+            'colorOptions' => $colorOptions,
+            'error'        => null,
+        ]);
+    }
+
+    // multiple products (same barcode, different colors)
+    return response()->json([
+        'product'      => null,
+        'products'     => $products,
+        'colorOptions' => $colorOptions,
+        'error'        => null,
+    ]);
+}
+
 
     public function getCoupon(Request $request)
     {

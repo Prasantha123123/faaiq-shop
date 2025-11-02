@@ -91,5 +91,11 @@ class Product extends Model
         )->withPivot('quantity');
     }
 
+    
+  public function promotion_items()
+    {
+        // if your column name is different, change 'product_id' below
+        return $this->hasMany(PromotionItem::class, 'product_id');
+    }
 
 }

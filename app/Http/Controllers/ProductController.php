@@ -128,10 +128,11 @@ $productsQuery = Product::with('category', 'color', 'size', 'supplier')
             });
 
 
+        
+
         $count = $productsQuery->count();
 
         $products = $productsQuery->orderBy('created_at', 'desc')->paginate(8);
-
 
         // $allcategories = Category::with('parent')->get();
         $allcategories = Category::with('parent')->get()->map(function ($category) {
@@ -217,7 +218,7 @@ $productsQuery = Product::with('category', 'color', 'size', 'supplier')
             'stock_quantity' => 'nullable|integer|min:0',
             'discount' => 'nullable|numeric|min:0|max:100',
             'supplier_id' => 'nullable|exists:suppliers,id',
-            'barcode' => 'nullable|string|unique:products',
+            'barcode' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'expire_date' => 'nullable|date',
             'batch_no' => 'nullable|max:50',
@@ -271,6 +272,8 @@ $productsQuery = Product::with('category', 'color', 'size', 'supplier')
     public function productVariantStore(Request $request)
     {
 
+
+
         if (!Gate::allows('hasRole', ['Admin'])) {
             abort(403, 'Unauthorized');
         }
@@ -280,7 +283,7 @@ $productsQuery = Product::with('category', 'color', 'size', 'supplier')
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50',
             // 'code' => 'required|string|max:50|unique:products,code, NULL,id,deleted_at,NULL',
-            'barcode' => 'nullable|string|unique:products',
+            'barcode' => 'nullable|string',
             'size_id' => 'nullable|exists:sizes,id',
             'color_id' => 'nullable|exists:colors,id',
             'cost_price' => 'nullable|numeric|min:0',
@@ -335,6 +338,8 @@ $productsQuery = Product::with('category', 'color', 'size', 'supplier')
             // Redirect with success message
             return redirect()->route('products.index')->banner('Product created successfully');
         } catch (\Exception $e) {
+
+ 
             // Log error and redirect back with an error message
             \Log::error('Error creating product: ' . $e->getMessage());
 

@@ -7,40 +7,27 @@ use Illuminate\Support\Str;
 trait GeneratesUniqueCode
 {
     /**
-     * Generate a unique code.
+     * Generate a unique alphanumeric code (contains letters and digits).
      *
      * @param int $length Length of the unique code.
      * @return string
      */
-    public function generateUniqueCode($length = 8)
+    public function generateUniqueCode($length = 12)
     {
-        // Generate the base code with 12 digits (timestamp + random numeric string)
-        $timestamp = substr(now()->timestamp, -6); // Use the last 6 digits of the current timestamp
-        $random = str_pad(mt_rand(0, pow(10, $length - strlen($timestamp)) - 1), $length - strlen($timestamp), '0', STR_PAD_LEFT); // Generate the remaining random digits
+        $length = max(2, (int) $length); // ensure minimum length 2 to allow at least one letter and one digit
+        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        $maxIndex = strlen($chars) - 1;
 
-        $codeWithoutChecksum = $timestamp . $random; // Combine timestamp and random digits to get 12 digits
+        do {
+            $code = '';
+            for ($i = 0; $i < $length; $i++) {
+                $code .= $chars[random_int(0, $maxIndex)];
+            }
+            $hasLetter = (bool) preg_match('/[A-Z]/', $code);
+            $hasDigit  = (bool) preg_match('/\d/', $code);
+            // Loop until we have at least one letter and one digit
+        } while (! $hasLetter || ! $hasDigit);
 
-        // Ensure the code is exactly 12 digits
-        $codeWithoutChecksum = substr($codeWithoutChecksum, 0, 8);
-
-        // Calculate the checksum for EAN-13
-        $checksum = $this->calculateEAN13Checksum($codeWithoutChecksum);
-
-        // Return the full 13-digit EAN-13 code
-        return $codeWithoutChecksum . $checksum;
-    }
-
-    private function calculateEAN13Checksum($code)
-    {
-        $sum = 0;
-
-        // EAN-13 checksum algorithm
-        for ($i = 0; $i < strlen($code); $i++) {
-            $digit = (int)$code[$i];
-            $sum += ($i % 2 === 0) ? $digit : $digit * 3; // Multiply every second digit by 3
-        }
-
-        // Calculate the checksum digit
-        return (10 - ($sum % 10)) % 10;
+        return $code;
     }
 }
