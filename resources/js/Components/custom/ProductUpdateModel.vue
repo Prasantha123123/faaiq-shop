@@ -88,7 +88,7 @@
 
                 <div class="flex items-center gap-8 mt-6">
                   <div class="w-full">
-                    <!-- Category Name -->
+                    <!-- Product Code -->
                     <div>
                       <label class="block text-sm font-medium text-gray-300"
                         >Product Code:</label
@@ -103,11 +103,31 @@
                         form.errors.code
                       }}</span>
                     </div>
-
                   </div>
-                  <!-- Cost Price input -->
+
+                  <!-- Barcode -->
                   <div class="w-full">
-                    <!-- Category Name -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-300"
+                        >Barcode:</label
+                      >
+                      <input
+                        v-model="form.barcode"
+                        type="text"
+                        id="barcode"
+                        class="w-full px-4 py-2 mt-2 text-black rounded-md focus:outline-none focus:ring focus:ring-blue-600"
+                        placeholder="Enter or scan barcode"
+                      />
+                      <span v-if="form.errors.barcode" class="mt-4 text-red-500">{{
+                        form.errors.barcode
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-8 mt-6">
+                  <!-- Category Name -->
+                  <div class="w-full">
                     <div>
                       <label class="block text-sm font-medium text-gray-300"
                         >Category Name:</label
@@ -137,7 +157,32 @@
                         form.errors.name
                       }}</span>
                     </div>
+                  </div>
 
+                  <!-- Supplier Name -->
+                  <div class="w-full">
+                    <label
+                      for="supplier_id"
+                      class="block text-sm font-medium text-gray-300"
+                      >Supplier Name:</label
+                    >
+                    <select
+                      v-model="form.supplier_id"
+                      id="supplier_id"
+                      class="w-full px-4 py-2 mt-2 text-black bg-white rounded-md focus:outline-none focus:ring focus:ring-blue-600"
+                    >
+                      <option value="">Select a Supplier</option>
+                      <option
+                        v-for="supplier in suppliers"
+                        :key="supplier.id"
+                        :value="supplier.id"
+                      >
+                        {{ supplier.name }}
+                      </option>
+                    </select>
+                    <span v-if="form.errors.supplier_id" class="mt-4 text-red-500">
+                      {{ form.errors.supplier_id }}
+                    </span>
                   </div>
                 </div>
 
@@ -353,7 +398,6 @@
                       class="block text-sm font-medium text-gray-300"
                       >Stock Quantity:</label
                     >
-
                     <input
                       type="number"
                       id="stock_quantity"
@@ -362,32 +406,13 @@
                       placeholder="Stock quantity"
                       required
                     />
+                    <span v-if="form.errors.stock_quantity" class="mt-4 text-red-500">
+                      {{ form.errors.stock_quantity }}
+                    </span>
                   </div>
 
                   <div class="w-full">
-                    <label
-                      for="image"
-                      class="block text-sm font-medium text-gray-300"
-                      >Supplier Name :</label
-                    >
-
-                    <select
-                      v-model="form.supplier_id"
-                      id="supplier_id"
-                      class="w-full px-4 py-2 mt-2 text-black bg-white rounded-md focus:outline-none focus:ring focus:ring-blue-600"
-                    >
-                      <option value="">Select a Supplier</option>
-                      <option
-                        v-for="supplier in suppliers"
-                        :key="supplier.id"
-                        :value="supplier.id"
-                      >
-                        {{ supplier.name }}
-                      </option>
-                    </select>
-                    <span v-if="form.errors.sub_id" class="mt-4 text-red-500">
-                      {{ form.errors.sub_id }}
-                    </span>
+                    <!-- Empty space for layout balance -->
                   </div>
                 </div>
 

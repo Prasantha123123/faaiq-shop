@@ -296,9 +296,12 @@
                       v-model="form.barcode"
                       type="text"
                       id="barcode"
-                      placeholder="Enter Barcode"
+                      placeholder="Enter or scan barcode"
                       class="w-full px-4 py-2 mt-2 text-black rounded-md focus:outline-none focus:ring focus:ring-blue-600"
                     />
+                    <span v-if="isLoadingBarcode" class="mt-1 text-sm text-blue-400">
+                      🔍 Looking up barcode...
+                    </span>
                     <span
                       v-if="form.errors.barcode"
                       class="mt-4 text-red-500"
@@ -316,6 +319,9 @@
                       placeholder="Enter product code"
                       class="w-full px-4 py-2 mt-2 text-black rounded-md focus:outline-none focus:ring focus:ring-blue-600"
                     />
+                    <span v-if="isLoadingCode" class="mt-1 text-sm text-blue-400">
+                      🔍 Looking up product code...
+                    </span>
                     <span
                       v-if="form.errors.code"
                       class="mt-4 text-red-500"
@@ -325,7 +331,6 @@
                 </div>
                 
                 <div class="flex items-center gap-8">
-
                    <div class="w-full">
                       <label class="block text-sm font-medium text-gray-300"
                         >Product Name:</label
@@ -342,7 +347,8 @@
                         form.errors.name
                       }}</span>
                     </div>
-                  <div class="w-full hidden">
+
+                  <div class="w-full">
                     <label class="block text-sm font-medium text-gray-300"
                       >Batch No:</label
                     >
@@ -350,7 +356,6 @@
                       v-model="form.batch_no"
                       type="text"
                       id="batch_no"
-                      
                       placeholder="Enter batch no"
                       class="w-full px-4 py-2 mt-2 text-black rounded-md focus:outline-none focus:ring focus:ring-blue-600"
                     />
@@ -360,7 +365,6 @@
                       >{{ form.errors.batch_no }}</span
                     >
                   </div>
-                 
                 </div>
                 
                 <div>
@@ -678,6 +682,8 @@ const form = useForm({
 
 const isDialogOpen = ref(false);
 const dialogType = ref("size");
+const isLoadingBarcode = ref(false);
+const isLoadingCode = ref(false);
 
 // Form states for Size and Product
 const sizeForm = useForm({
@@ -789,6 +795,152 @@ const submitCategory = () => {
     },
   });
 };
+
+// Watch barcode field to auto-fill product details
+let barcodeTimeout = null;
+watch(
+  () => form.barcode,
+  (newBarcode) => {
+    console.log("🔍 Barcode watcher triggered! Value:", newBarcode);
+    
+    // Clear previous timeout
+    if (barcodeTimeout) {
+      clearTimeout(barcodeTimeout);
+    }
+
+    // Stop if empty
+    if (!newBarcode || newBarcode.trim() === "") {
+      isLoadingBarcode.value = false;
+      console.log("❌ Barcode empty, stopping");
+      return;
+    }
+
+    // Show loading indicator
+    isLoadingBarcode.value = true;
+    console.log("⏳ Starting barcode search...");
+
+    // Debounce the API call
+    barcodeTimeout = setTimeout(async () => {
+      try {
+        console.log("Searching for barcode:", newBarcode);
+        const response = await axios.get("/products/search-by-barcode", {
+          params: { barcode: newBarcode },
+        });
+
+        console.log("Barcode search response:", response.data);
+
+        if (response.data && response.data.product) {
+          const product = response.data.product;
+          console.log("Found product:", product);
+          
+          // Auto-fill form fields (but don't overwrite the barcode itself)
+          form.name = product.name || "";
+          form.code = product.code || "";
+          form.category_id = product.category_id || "";
+          form.supplier_id = product.supplier_id || "";
+          form.size_id = product.size_id || "";
+          form.color_id = product.color_id || "";
+          form.cost_price = product.cost_price || null;
+          form.selling_price = product.selling_price || null;
+          form.discount = product.discount || 0;
+          form.discounted_price = product.discounted_price || null;
+
+          // Generate next batch number for this product
+          if (product.name) {
+            try {
+              const batchResponse = await axios.get("/products/next-batch", {
+                params: { name: product.name },
+              });
+              form.batch_no = batchResponse.data.batch_no || "";
+            } catch (error) {
+              console.error("Error generating batch number:", error);
+            }
+          }
+        }
+      } catch (error) {
+        // Silently handle - barcode might not exist yet
+        console.error("Barcode search error:", error);
+        if (error.response) {
+          console.error("Error response:", error.response.data);
+          console.error("Error status:", error.response.status);
+        }
+      } finally {
+        isLoadingBarcode.value = false;
+      }
+    }, 500); // 500ms debounce
+  }
+);
+
+// Watch product code field to auto-fill product details
+let codeTimeout = null;
+watch(
+  () => form.code,
+  (newCode) => {
+    // Clear previous timeout
+    if (codeTimeout) {
+      clearTimeout(codeTimeout);
+    }
+
+    // Stop if empty
+    if (!newCode || newCode.trim() === "") {
+      isLoadingCode.value = false;
+      return;
+    }
+
+    // Show loading indicator
+    isLoadingCode.value = true;
+
+    // Debounce the API call
+    codeTimeout = setTimeout(async () => {
+      try {
+        console.log("Searching for product code:", newCode);
+        const response = await axios.get("/products/search-by-barcode", {
+          params: { code: newCode },
+        });
+
+        console.log("Product code search response:", response.data);
+
+        if (response.data && response.data.product) {
+          const product = response.data.product;
+          console.log("Found product by code:", product);
+          
+          // Auto-fill form fields (but don't overwrite the code itself)
+          form.name = product.name || "";
+          form.barcode = product.barcode || "";
+          form.category_id = product.category_id || "";
+          form.supplier_id = product.supplier_id || "";
+          form.size_id = product.size_id || "";
+          form.color_id = product.color_id || "";
+          form.cost_price = product.cost_price || null;
+          form.selling_price = product.selling_price || null;
+          form.discount = product.discount || 0;
+          form.discounted_price = product.discounted_price || null;
+
+          // Generate next batch number for this product
+          if (product.name) {
+            try {
+              const batchResponse = await axios.get("/products/next-batch", {
+                params: { name: product.name },
+              });
+              form.batch_no = batchResponse.data.batch_no || "";
+            } catch (error) {
+              console.error("Error generating batch number:", error);
+            }
+          }
+        }
+      } catch (error) {
+        // Silently handle - code might not exist yet
+        console.error("Product code search error:", error);
+        if (error.response) {
+          console.error("Error response:", error.response.data);
+          console.error("Error status:", error.response.status);
+        }
+      } finally {
+        isLoadingCode.value = false;
+      }
+    }, 500); // 500ms debounce
+  }
+);
 
 watch(
   () => form.name,

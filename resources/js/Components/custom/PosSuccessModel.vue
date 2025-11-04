@@ -121,11 +121,11 @@ const handlePrintReceipt = () => {
     const discount = 0; // Example discount (can be dynamic)
     const total = subTotal - totalDiscount - customDiscount;
 
-const productRows = props.products
-    .map((product) => {
-      const isPack = Number(product.is_promotion) === 1;
+    const productRows = props.products
+        .map((product) => {
+            const isPack = Number(product.is_promotion) === 1;
 
-      const parentRow = `
+            const parentRow = `
         <tr>
           <td>
           ${product.name}${product.color_id ? ` (${product.color.name})` : ``}
@@ -134,35 +134,34 @@ const productRows = props.products
           </td>
           <td style="text-align:center;">${Number(product.quantity || 0)}</td>
           <td>
-            ${
-              (product.discount > 0 && product.apply_discount)
-                ? `<div style="font-weight:bold;font-size:7px;background-color:black;color:white;text-align:center;">${product.discount}% off</div>`
-                : ``
-            }
+            ${(product.discount > 0 && product.apply_discount)
+                    ? `<div style="font-weight:bold;font-size:7px;background-color:black;color:white;text-align:center;">${product.discount}% off</div>`
+                    : ``
+                }
             <div>${Number(product.selling_price || 0).toFixed(2)}</div>
           </td>
         </tr>
       `;
 
-      // Support both snake_case and camelCase from API
-      const items = Array.isArray(product.promotion_items)
-        ? product.promotion_items
-        : (Array.isArray(product.promotionItems) ? product.promotionItems : []);
+            // Support both snake_case and camelCase from API
+            const items = Array.isArray(product.promotion_items)
+                ? product.promotion_items
+                : (Array.isArray(product.promotionItems) ? product.promotionItems : []);
 
-      let childRows = ``;
-      if (isPack && items.length) {
-        // Heading (NOT full width): first column only; keep other columns empty
-        const headingRow = `
+            let childRows = ``;
+            if (isPack && items.length) {
+                // Heading (NOT full width): first column only; keep other columns empty
+                const headingRow = `
           <tr class="pack-heading">
            <td class="pack-heading-cell" colspan="3">Pack Include</td>
 
           </tr>
         `;
 
-        const children = items.map((pi) => {
-          const compName = (pi.product && pi.product.name) ? pi.product.name : `#${pi.product_id}`;
-          const compQty = (Number(pi.quantity) || 1) * (Number(product.quantity) || 1);
-          return `
+                const children = items.map((pi) => {
+                    const compName = (pi.product && pi.product.name) ? pi.product.name : `#${pi.product_id}`;
+                    const compQty = (Number(pi.quantity) || 1) * (Number(product.quantity) || 1);
+                    return `
             <tr class="pack-child">
               <td style="padding-left:14px; background:#f1f5f9; border:1px solid #ccc; border-radius:4px; font-size:11px;">
                * ${compName}
@@ -174,14 +173,14 @@ const productRows = props.products
 
             </tr>
           `;
-        }).join('');
+                }).join('');
 
-        childRows = headingRow + children;
-      }
+                childRows = headingRow + children;
+            }
 
-      return parentRow + childRows;
-    })
-    .join("");
+            return parentRow + childRows;
+        })
+        .join("");
 
 
     // Generate the receipt HTML
@@ -205,12 +204,12 @@ const productRows = props.products
               font-size: 12px;
               font-family: 'Arial', sans-serif;
               margin: 0;
-              padding: 10px;
+              padding: 5px;
               color: #000;
           }
           .header {
               text-align: center;
-              margin-bottom: 16px;
+              margin-bottom: 8px;
           }
           .header h1 {
               font-size: 20px;
@@ -219,18 +218,18 @@ const productRows = props.products
           }
           .header p {
               font-size: 12px;
-              margin: 4px 0;
+              margin: 0;
           }
           .section {
-              margin-bottom: 16px;
-              padding-top: 8px;
+              margin-bottom: 8px;
+              padding-top: 4px;
               border-top: 1px solid #000;
           }
           .info-row {
               display: flex;
               justify-content: space-between;
               font-size: 14px;
-              margin-top: 8px;
+              margin-top: 4px;
           }
           .info-row p {
               margin: 0;
@@ -242,7 +241,7 @@ const productRows = props.products
           .info-column {
               display: flex;
               flex-direction: column;
-              gap: 8px;
+              gap: 4px;
           }
           .info-item {
               text-align: left;
@@ -268,13 +267,13 @@ const productRows = props.products
           }
           .totals {
               border-top: 1px solid #000;
-              padding-top: 8px;
+              padding-top: 4px;
               font-size: 12px;
           }
           .totals div {
               display: flex;
               justify-content: space-between;
-              margin-bottom: 8px;
+              margin-bottom: 4px;
           }
           .totals div:nth-child(4) {
               font-size: 14px;
@@ -283,10 +282,10 @@ const productRows = props.products
           .footer {
               text-align: center;
               font-size: 10px;
-              margin-top: 16px;
+              margin-top: 8px;
           }
           .footer p {
-              margin: 6px 0;
+              margin: 3px 0;
           }
           .footer .italic {
               font-style: italic;
@@ -297,9 +296,9 @@ const productRows = props.products
   </head>
   <body>
       <div class="receipt-container">
-                                <div class="header">
-                                    <img src="/images/billlogo.png" style="width: 160px; height: auto; max-height: 90px;" />
-  ${companyInfo?.value?.address ? `<p>${companyInfo.value.address}</p>` : ''}
+            <div class="header">
+            <img src="/images/billlogo.png" style="width: 180px; height: auto; max-height: 80px; margin: 0 auto; margin-bottom: 0; display: block;" />
+  ${companyInfo?.value?.address ? `<p style="margin-top: 0;">${companyInfo.value.address}</p>` : ''}
   ${(companyInfo?.value?.phone || companyInfo?.value?.phone2 || companyInfo?.value?.email)
             ? `<p>${companyInfo.value.phone || ''}  ${companyInfo.value.phone2 || ''}  ${companyInfo.value.email || ''}</p>`
             : ''}
@@ -316,7 +315,7 @@ const productRows = props.products
                   <div class="info-column">
                       <div class="info-item">
                           <p>Date:</p>
-                          <small>${new Date().toLocaleDateString()} </small>
+                          <small>${new Date().toLocaleDateString('en-GB')} </small>
                       </div>
                       <div class="info-item">
                           <p>Customer:</p>
@@ -373,18 +372,22 @@ const productRows = props.products
                   <span>Sub Total</span>
                   <span>${(Number(props.subTotal) || 0).toFixed(2)} LKR</span>
               </div>
+              ${(Number(props.totalDiscount) > 0) ? `
               <div>
                   <span>Discount</span>
                   <span>${(Number(props.totalDiscount) || 0).toFixed(2)} LKR</span>
               </div>
+              ` : ''}
+              ${(Number(props.custom_discount) > 0) ? `
               <div>
                   <span>Custom Discount</span>
                   <span>
                     ${(Number(props.custom_discount) || 0).toFixed(2)}
                     ${props.custom_discount_type === 'percent' ? '%' :
-                    props.custom_discount_type === 'fixed' ? 'LKR' : ''}
+            props.custom_discount_type === 'fixed' ? 'LKR' : ''}
                   </span>
               </div>
+              ` : ''}
               <div>
                   <span>Total</span>
                   <span>${(Number(props.total) || 0).toFixed(2)} LKR</span>

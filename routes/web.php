@@ -66,6 +66,11 @@ Route::middleware([
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('categories', CategoryController::class);
+    
+    // Custom product routes MUST come before resource routes
+    Route::get('/products/next-batch', [ProductController::class, 'getNextBatchCode']);
+    Route::get('/products/search-by-barcode', [ProductController::class, 'searchByBarcode']);
+    
     Route::resource('products', ProductController::class);
     Route::resource('suppliers', SupplierController::class);
     Route::post('suppliers/{supplier}', [SupplierController::class, 'update']);
@@ -114,10 +119,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
   Route::post('/api/products2', [ProductController::class, 'fetchProducts2']);
 
     Route::resource('return-bill', ReturnItemController::class);
-Route::get('/products/next-batch', [ProductController::class, 'getNextBatchCode']);
-
-
-
 
     Route::post('/api/products', [ProductController::class, 'fetchProducts']);
     Route::post('/api/sale/items', [ReturnItemController::class, 'fetchSaleItems'])->name('sale.items');

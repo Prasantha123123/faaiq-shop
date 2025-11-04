@@ -296,6 +296,47 @@ private function getNextBatchForName(string $productName): string
 
 // inside ProductController
 
+public function searchByBarcode(Request $request)
+{
+    $barcode = $request->input('barcode');
+    $code = $request->input('code');
+
+    if (!$barcode && !$code) {
+        return response()->json(['product' => null]);
+    }
+
+    // Find product by barcode or code (get the most recent one)
+    $query = \App\Models\Product::query();
+    
+    if ($barcode) {
+        $query->where('barcode', $barcode);
+    } elseif ($code) {
+        $query->where('code', $code);
+    }
+    
+    $product = $query->latest()->first();
+
+    if ($product) {
+        return response()->json([
+            'product' => [
+                'name' => $product->name,
+                'code' => $product->code,
+                'barcode' => $product->barcode,
+                'category_id' => $product->category_id,
+                'supplier_id' => $product->supplier_id,
+                'size_id' => $product->size_id,
+                'color_id' => $product->color_id,
+                'cost_price' => $product->cost_price,
+                'selling_price' => $product->selling_price,
+                'discount' => $product->discount,
+                'discounted_price' => $product->discounted_price,
+            ]
+        ]);
+    }
+
+    return response()->json(['product' => null]);
+}
+
 public function getNextBatchCode(Request $request)
 {
     $name = $request->input('name');
