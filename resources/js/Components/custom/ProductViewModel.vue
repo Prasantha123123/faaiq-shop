@@ -391,7 +391,7 @@ function generateAndPrintBarcodes() {
       JsBarcode(svg, barcode, {
         format: 'CODE128',
         lineColor: '#000',
-        width: 0.6,
+        width: 0.7,
         height: Math.round(BARCODE_H_MM * MM_TO_PX),
         displayValue: false,
         margin: 0,
