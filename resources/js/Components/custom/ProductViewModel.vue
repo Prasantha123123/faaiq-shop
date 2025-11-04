@@ -244,13 +244,13 @@ function generateAndPrintBarcodes() {
     return;
   }
 
-  // Sizing constants (mm/px)
+  // Sizing constants (mm/px) - for 30mm x 20mm sticker
   const MM_TO_PX = 3.78;
   const LABEL_W_MM = 30;
-  const LABEL_H_MM = 18;
+  const LABEL_H_MM = 20;
   const INNER_PADDING_MM = 1;
   const GUTTER_MM = 0; // Removed gap - configured in printer
-  const BARCODE_H_MM = 7;
+  const BARCODE_H_MM = 9;
   const CODE_FZ_PX = 7;
   const NAME_FZ_PX = 8;
   const PRICE_FZ_PX = 9;
