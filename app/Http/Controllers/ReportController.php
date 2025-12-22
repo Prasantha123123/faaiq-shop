@@ -124,7 +124,21 @@ class ReportController extends Controller
     $totalSaleAmount = $sales->sum('total_amount');
     $totalCost = $sales->sum('total_cost');
     $totalDiscount = $sales->sum('discount');
-    $customDiscount = $sales->sum('custom_discount');
+    
+    // Calculate custom discount properly (considering percentage vs fixed amount)
+    $customDiscount = 0;
+    foreach ($sales as $sale) {
+        if ($sale->custom_discount && $sale->custom_discount > 0) {
+            if ($sale->custom_discount_type === 'percent') {
+                // For percentage discounts, calculate the actual discount amount
+                $customDiscount += ($sale->total_amount * $sale->custom_discount) / 100;
+            } else {
+                // For fixed amount discounts, add directly
+                $customDiscount += $sale->custom_discount;
+            }
+        }
+    }
+    
     $netProfit = $totalSaleAmount - $totalCost - $totalDiscount - $customDiscount;
     $totalTransactions = $sales->count();
     $averageTransactionValue = $totalTransactions > 0 ? $totalSaleAmount / $totalTransactions : 0;
