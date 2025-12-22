@@ -382,9 +382,7 @@ const handlePrintReceipt = () => {
               <div>
                   <span>Custom Discount</span>
                   <span>
-                    ${(Number(props.custom_discount) || 0).toFixed(2)}
-                    ${props.custom_discount_type === 'percent' ? '%' :
-            props.custom_discount_type === 'fixed' ? 'LKR' : ''}
+                    ${(Number(props.custom_discount) || 0).toFixed(2)}${props.custom_discount_type === 'percent' ? '%' : ' LKR'}
                   </span>
               </div>
               ` : ''}

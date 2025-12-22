@@ -124,8 +124,8 @@ class ReportController extends Controller
     $totalSaleAmount = $sales->sum('total_amount');
     $totalCost = $sales->sum('total_cost');
     $totalDiscount = $sales->sum('discount');
-    $customeDiscount = $sales->sum('custom_discount');
-    $netProfit = $totalSaleAmount - $totalCost - $totalDiscount - $customeDiscount;
+    $customDiscount = $sales->sum('custom_discount');
+    $netProfit = $totalSaleAmount - $totalCost - $totalDiscount - $customDiscount;
     $totalTransactions = $sales->count();
     $averageTransactionValue = $totalTransactions > 0 ? $totalSaleAmount / $totalTransactions : 0;
     $totalCustomer = $salesQuery->distinct('customer_id')->count('customer_id');
@@ -140,7 +140,7 @@ class ReportController extends Controller
         'totalCustomer' => $totalCustomer,
         'netProfit' => $netProfit,
         'totalDiscount' => $totalDiscount,
-        'customeDiscount' => $customeDiscount,
+        'customDiscount' => $customDiscount,
         'totalTransactions' => $totalTransactions,
         'averageTransactionValue' => round($averageTransactionValue, 2),
         'startDate' => $startDate,

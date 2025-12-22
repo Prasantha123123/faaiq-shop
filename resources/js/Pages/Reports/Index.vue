@@ -175,7 +175,7 @@
         </div>
         <div class="flex flex-col items-center justify-center">
           <p class="text-2xl font-bold text-black">
-            {{ (totalDiscount || 0) + (customeDiscount || 0) }} LKR
+            {{ (totalDiscount || 0) + (customDiscount || 0) }} LKR
           </p>
         </div>
       </div>
@@ -481,7 +481,7 @@
           <th class="p-3 text-center font-semibold">Items</th>
           <th class="p-3 text-center font-semibold">Subtotal (LKR)</th>
           <th class="p-3 text-center font-semibold">Discount (LKR)</th>
-          <th class="p-3 text-center font-semibold">Custom Discount (LKR)</th>
+          <th class="p-3 text-center font-semibold">Custom Discount Amount (LKR)</th>
           <th class="p-3 text-center font-semibold">Total (LKR)</th>
           <th class="p-3 text-center font-semibold">Payment Method</th>
           <th class="p-3 text-left font-semibold">Cashier</th>
@@ -502,9 +502,24 @@
           <td class="p-3 text-center">{{ sale.sale_items ? sale.sale_items.length : 0 }}</td>
           <td class="p-3 text-center font-bold">{{ Number(sale.total_amount || 0).toFixed(2) }}</td>
           <td class="p-3 text-center">{{ Number(sale.discount || 0).toFixed(2) }}</td>
-          <td class="p-3 text-center">{{ Number(sale.custom_discount || 0).toFixed(2) }}</td>
+          <td class="p-3 text-center">
+            {{ 
+              sale.custom_discount_type === 'percent' ? 
+                ((Number(sale.total_amount || 0) * Number(sale.custom_discount || 0)) / 100).toFixed(2) :
+                Number(sale.custom_discount || 0).toFixed(2)
+            }}
+          </td>
           <td class="p-3 text-center font-bold text-green-600">
-            {{ (Number(sale.total_amount || 0) - Number(sale.discount || 0) - Number(sale.custom_discount || 0)).toFixed(2) }}
+            {{ 
+              (
+                Number(sale.total_amount || 0) - 
+                Number(sale.discount || 0) - 
+                (sale.custom_discount_type === 'percent' ? 
+                  ((Number(sale.total_amount || 0) * Number(sale.custom_discount || 0)) / 100) :
+                  Number(sale.custom_discount || 0)
+                )
+              ).toFixed(2)
+            }}
           </td>
           <td class="p-3 text-center">
             <span :class="{
@@ -647,7 +662,7 @@ const props = defineProps({
   netProfit: { type: Number, required: true },
   totalTransactions: { type: Number, required: true },
   totalDiscount: { type: Number, required: true },
-  customeDiscount: { type: Number, required: true },
+  customDiscount: { type: Number, required: true },
   totalCustomer: { type: Number, required: true },
   startDate: { type: String, default: "" },
   endDate: { type: String, default: "" },

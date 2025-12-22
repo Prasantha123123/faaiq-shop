@@ -102,8 +102,18 @@
                         >
                             <td class="px-6 py-3 text- first-letter:">{{ index + 1 }}</td>
                             <td class="p-4 font-bold border-gray-200">{{ history.order_id || "N/A" }}</td>
-                            <td class="p-4 font-bold border-gray-200">{{ history.total_amount - (history.discount || 0) - (history.custom_discount || 0) || "N/A" }}</td>
-                             <td class="p-4 font-bold border-gray-200">{{((parseFloat(history.discount) || 0) + (parseFloat(history.custom_discount) || 0)).toLocaleString()}}</td>
+                            <td class="p-4 font-bold border-gray-200">{{ history.total_amount || "N/A" }}</td>
+                             <td class="p-4 font-bold border-gray-200">
+                                {{ 
+                                    (
+                                        (parseFloat(history.discount) || 0) + 
+                                        (history.custom_discount_type === 'percent' ? 
+                                            ((parseFloat(history.total_amount) || 0) * (parseFloat(history.custom_discount) || 0) / 100) : 
+                                            (parseFloat(history.custom_discount) || 0)
+                                        )
+                                    ).toFixed(2)
+                                }}
+                             </td>
                             <td class="p-4 font-bold border-gray-200">{{ history.payment_method || "N/A" }}</td>
                             <td class="p-4 font-bold border-gray-200">{{ history.sale_date || "N/A" }}</td>
                             <td class="p-4 font-bold border-gray-200">
@@ -199,10 +209,19 @@ const printReceipt = (history) => {
   const subTotal = Number(history.total_amount || 0);
   const totalDiscount = Number(history.discount || 0);
   const customDiscount = Number(history.custom_discount || 0);
-  const customDiscountType = history.custom_discount_type || '';
-  const total = subTotal - totalDiscount - customDiscount;
-  const cash = Number(history.received_amount || 0);
-  const balance = Number(history.balance_amount || 0);
+  const customDiscountType = history.custom_discount_type || 'fixed';
+  
+  // Calculate actual custom discount amount
+  let customDiscountAmount = 0;
+  if (customDiscountType === 'percent') {
+    customDiscountAmount = (subTotal * customDiscount) / 100;
+  } else {
+    customDiscountAmount = customDiscount;
+  }
+  
+  const total = subTotal - totalDiscount - customDiscountAmount;
+  const cash = Number(history.cash || 0);
+  const balance = cash - total; // Calculate balance as cash - total
 
   const productRows = (history.sale_items || [])
     .map((item) => {
@@ -395,8 +414,7 @@ const printReceipt = (history) => {
             <div>
                 <span>Custom Discount</span>
                 <span>
-                    ${customDiscount.toFixed(2)}
-                    ${customDiscountType === 'percent' ? '%' : customDiscountType === 'fixed' ? 'LKR' : ''}
+                    ${customDiscount.toFixed(2)}${customDiscountType === 'percent' ? '%' : ' LKR'}
                 </span>
             </div>
             ` : ''}
