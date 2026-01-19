@@ -6,6 +6,8 @@ use App\Models\Product;
 use App\Models\Report;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\Voucher;
+use App\Models\VoucherCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -145,6 +147,71 @@ class ReportController extends Controller
     $totalCustomer = $salesQuery->distinct('customer_id')->count('customer_id');
 
     // =========================
+    // 11. Voucher Statistics
+    // =========================
+    $voucherCategoriesQuery = VoucherCategory::with(['vouchers']);
+    
+    $voucherCategories = $voucherCategoriesQuery->get()->map(function ($category) use ($startDate, $endDate) {
+        $vouchersQuery = $category->vouchers();
+        
+        // Total vouchers
+        $totalVouchers = $vouchersQuery->count();
+        
+        // Sold vouchers (has sale_id)
+        $soldVouchersQuery = clone $vouchersQuery;
+        if ($startDate && $endDate) {
+            $soldVouchers = $soldVouchersQuery->whereNotNull('sale_id')
+                ->whereHas('sale', function($q) use ($startDate, $endDate) {
+                    $q->whereBetween('sale_date', [$startDate, $endDate]);
+                })->count();
+        } else {
+            $soldVouchers = $soldVouchersQuery->whereNotNull('sale_id')->count();
+        }
+        
+        // Active vouchers (sold but not used)
+        $activeVouchersQuery = clone $vouchersQuery;
+        $activeVouchers = $activeVouchersQuery->whereNotNull('sale_id')->where('is_used', false)->count();
+        
+        // Used vouchers (redeemed)
+        $usedVouchersQuery = clone $vouchersQuery;
+        if ($startDate && $endDate) {
+            $usedVouchers = $usedVouchersQuery->where('is_used', true)
+                ->whereBetween('used_at', [$startDate, $endDate])
+                ->count();
+        } else {
+            $usedVouchers = $usedVouchersQuery->where('is_used', true)->count();
+        }
+        
+        // Inactive vouchers (not yet sold)
+        $inactiveVouchers = $totalVouchers - $soldVouchers;
+        
+        // Total revenue from voucher sales
+        $totalRevenue = $soldVouchers * $category->amount;
+        
+        return [
+            'category_name' => $category->name,
+            'amount' => $category->amount,
+            'total_vouchers' => $totalVouchers,
+            'sold_vouchers' => $soldVouchers,
+            'active_vouchers' => $activeVouchers,
+            'used_vouchers' => $usedVouchers,
+            'inactive_vouchers' => $inactiveVouchers,
+            'total_revenue' => $totalRevenue,
+            'is_active' => $category->is_active,
+        ];
+    });
+
+    // Overall voucher summary
+    $voucherSummary = [
+        'total_vouchers' => $voucherCategories->sum('total_vouchers'),
+        'sold_vouchers' => $voucherCategories->sum('sold_vouchers'),
+        'active_vouchers' => $voucherCategories->sum('active_vouchers'),
+        'used_vouchers' => $voucherCategories->sum('used_vouchers'),
+        'inactive_vouchers' => $voucherCategories->sum('inactive_vouchers'),
+        'total_revenue' => $voucherCategories->sum('total_revenue'),
+    ];
+
+    // =========================
     // 10. Return to Vue via Inertia
     // =========================
     return Inertia::render('Reports/Index', [
@@ -161,6 +228,8 @@ class ReportController extends Controller
         'endDate' => $endDate,
         'categorySales' => $categorySales,
         'employeeSalesSummary' => $employeeSalesSummary,
+        'voucherCategories' => $voucherCategories,
+        'voucherSummary' => $voucherSummary,
     ]);
 }
 
