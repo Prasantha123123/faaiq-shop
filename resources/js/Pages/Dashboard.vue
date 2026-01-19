@@ -351,6 +351,25 @@
         </div>
       </Link>
 
+       <Link href="/vouchers" v-if="HasRole(['Admin'])">
+        <div class="dashboard-card bg-[#8B5CF6]">
+          <div class="card-content">
+            <div class="icon-container">
+              <img
+                src="/images/dashboard/voucher.png"
+                class="icon"
+                alt="dresshub.lk"
+              />
+            </div>
+            <div class="text-container">
+              <p class="title">Vouchers</p>
+              <p class="description">
+                Generate and manage vouchers with unique codes. Create voucher categories and track issued vouchers with ease.</p>
+            </div>
+          </div>
+        </div>
+      </Link>
+
 
 
     </div>

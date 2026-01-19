@@ -94,7 +94,8 @@ const props = defineProps({
     totalDiscount: String,
     total: String,
     custom_discount: Number,
-    custom_discount_type: String
+    custom_discount_type: String,
+    appliedVoucher: Object,
 });
 
 const handlePrintReceipt = () => {
@@ -386,14 +387,33 @@ const handlePrintReceipt = () => {
                   </span>
               </div>
               ` : ''}
+              ${(props.appliedVoucher) ? `
+              <div style="font-weight: bold; color: #8B5CF6;">
+                  <span>Voucher (${props.appliedVoucher.category_name})</span>
+                  <span>- ${(Number(props.appliedVoucher.amount) || 0).toFixed(2)} LKR</span>
+              </div>
+              ` : ''}
               <div>
                   <span>Total</span>
                   <span>${(Number(props.total) || 0).toFixed(2)} LKR</span>
               </div>
+              ${(props.appliedVoucher) ? `
+              <div>
+                  <span>Paid by Voucher</span>
+                  <span>${(Number(props.appliedVoucher.amount) || 0).toFixed(2)} LKR</span>
+              </div>
+              ${(Number(props.cash) > 0) ? `
+              <div>
+                  <span>Additional Cash</span>
+                  <span>${(Number(props.cash) || 0).toFixed(2)} LKR</span>
+              </div>
+              ` : ''}
+              ` : `
               <div>
                   <span>Cash</span>
                   <span>${(Number(props.cash) || 0).toFixed(2)} LKR</span>
               </div>
+              `}
               <div style="font-weight: bold;">
                   <span>Balance</span>
                   <span>${(Number(props.balance) || 0).toFixed(2)} LKR</span>

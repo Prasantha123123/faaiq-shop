@@ -12,6 +12,8 @@ use App\Models\SaleItem;
 use App\Models\Size;
 use App\Models\StockTransaction;
 use App\Models\Employee;
+use App\Models\Voucher;
+use App\Models\VoucherCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -125,6 +127,37 @@ class PosController extends Controller
         return response()->json(['success' => 'Coupon applied successfully.', 'coupon' => $coupon]);
     }
 
+    public function getVoucher(Request $request)
+    {
+        $request->validate(
+            ['code' => 'required|string'],
+            ['code.required' => 'The voucher code is missing.', 'code.string' => 'The voucher code must be a valid string.']
+        );
+
+        $voucher = Voucher::with('voucherCategory')
+            ->where('voucher_code', $request->code)
+            ->first();
+
+        if (!$voucher) {
+            return response()->json(['error' => 'Invalid voucher code.']);
+        }
+
+        if ($voucher->is_used) {
+            return response()->json(['error' => 'This voucher has already been used.']);
+        }
+
+        // Return voucher with category amount
+        return response()->json([
+            'success' => 'Voucher applied successfully.',
+            'voucher' => [
+                'id' => $voucher->id,
+                'voucher_code' => $voucher->voucher_code,
+                'amount' => $voucher->voucherCategory->amount,
+                'category_name' => $voucher->voucherCategory->name,
+            ]
+        ]);
+    }
+
     public function submit(Request $request)
     {
 
@@ -157,9 +190,18 @@ class PosController extends Controller
         $couponDiscount = isset($request->input('appliedCoupon')['discount']) ?
             floatval($request->input('appliedCoupon')['discount']) : 0;
 
+        // Get voucher discount if applied
+        $voucherDiscount = 0;
+        $voucherId = $request->input('voucher_id');
+        if ($voucherId) {
+            $voucher = Voucher::with('voucherCategory')->find($voucherId);
+            if ($voucher && !$voucher->is_used) {
+                $voucherDiscount = floatval($voucher->voucherCategory->amount);
+            }
+        }
 
         // Calculate total combined discount
-        $totalDiscount = $productDiscounts + $couponDiscount ;
+        $totalDiscount = $productDiscounts + $couponDiscount + $voucherDiscount;
 
         DB::beginTransaction(); // Start a transaction
 
@@ -193,6 +235,13 @@ class PosController extends Controller
                 }
             }
 
+            // Check if any products are vouchers
+            $hasVouchers = collect($products)->contains(function ($product) {
+                return isset($product['is_voucher']) && $product['is_voucher'] === true;
+            });
+
+            $voucherCategories = [];
+
             // Create the sale record
             $sale = Sale::create([
                 'customer_id' => $customer ? $customer->id : null, // Nullable customer_id
@@ -207,10 +256,78 @@ class PosController extends Controller
                 'cash' => $request->input('cash'),
                 'custom_discount' => $request->input('custom_discount'),
                 'custom_discount_type' => $request->input('custom_discount_type', 'fixed'),
-
+                'has_vouchers' => $hasVouchers,
+                'paid_with_voucher' => $voucherId ? true : false,
+                'redeemed_voucher_id' => $voucherId,
+                'voucher_payment_amount' => $request->input('voucher_amount', 0),
             ]);
 
+            // Mark voucher as used if applied
+            if ($voucherId) {
+                $voucher = Voucher::find($voucherId);
+                if ($voucher && !$voucher->is_used) {
+                    $voucher->update([
+                        'is_used' => true,
+                        'used_at' => now(),
+                        'sale_id' => $sale->id,
+                    ]);
+                }
+            }
+
             foreach ($products as $product) {
+                // Check if this is a voucher purchase
+                if (isset($product['is_voucher']) && $product['is_voucher'] === true) {
+                    // Handle voucher purchase
+                    $voucherCategoryId = $product['voucher_category_id'];
+                    $quantity = $product['quantity'];
+                    
+                    // Get available vouchers for this category
+                    $availableVouchers = Voucher::where('voucher_category_id', $voucherCategoryId)
+                        ->where('is_used', false)
+                        ->limit($quantity)
+                        ->get();
+                    
+                    if ($availableVouchers->count() < $quantity) {
+                        DB::rollBack();
+                        return response()->json([
+                            'message' => "Insufficient vouchers available. Only {$availableVouchers->count()} available.",
+                        ], 423);
+                    }
+                    
+                    // Mark vouchers as sold
+                    foreach ($availableVouchers as $voucher) {
+                        $voucher->update([
+                            'sale_id' => $sale->id,
+                            'issued_at' => now(),
+                        ]);
+                    }
+                    
+                    // Activate the voucher category when first voucher is sold
+                    $voucherCategory = VoucherCategory::find($voucherCategoryId);
+                    if ($voucherCategory && !$voucherCategory->is_active) {
+                        $voucherCategory->update(['is_active' => true]);
+                    }
+                    
+                    // Track voucher category info
+                    $voucherCategories[] = [
+                        'id' => $voucherCategoryId,
+                        'name' => $voucherCategory->name,
+                        'amount' => $voucherCategory->amount,
+                        'quantity' => $quantity,
+                    ];
+                    
+                    // Create sale item for voucher
+                    SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => null, // No product for vouchers
+                        'quantity' => $quantity,
+                        'unit_price' => $product['selling_price'],
+                        'total_price' => $quantity * $product['selling_price'],
+                    ]);
+                    
+                    continue; // Skip regular product processing
+                }
+                
                 // Check stock before saving sale items
                 $productModel = Product::find($product['id']);
                 if ($productModel) {
@@ -256,6 +373,13 @@ class PosController extends Controller
                         'stock_quantity' => $newStockQuantity,
                     ]);
                 }
+            }
+
+            // Update sale with voucher categories if any were sold
+            if (!empty($voucherCategories)) {
+                $sale->update([
+                    'voucher_categories' => json_encode($voucherCategories),
+                ]);
             }
 
             // Commit the transaction

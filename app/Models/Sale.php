@@ -22,6 +22,18 @@ class Sale extends Model
         'cash',
         'custom_discount',
         'custom_discount_type',
+        'has_vouchers',
+        'voucher_categories',
+        'paid_with_voucher',
+        'redeemed_voucher_id',
+        'voucher_payment_amount',
+    ];
+
+    protected $casts = [
+        'has_vouchers' => 'boolean',
+        'voucher_categories' => 'array',
+        'paid_with_voucher' => 'boolean',
+        'voucher_payment_amount' => 'decimal:2',
     ];
 
 

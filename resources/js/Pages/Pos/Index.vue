@@ -85,10 +85,16 @@
                     <div class="flex flex-col items-start justify-center w-full md:px-12 px-4">
                         <div class="flex items-center justify-between w-full">
                             <h2 class="md:text-5xl text-4xl font-bold text-black">Billing Details</h2>
-                            <span class="flex cursor-pointer" @click="isSelectModalOpen = true">
-                                <p class="text-xl text-blue-600 font-bold">User Manual</p>
-                                <img src="/images/selectpsoduct.svg" class="w-6 h-6 ml-2" />
-                            </span>
+                            <div class="flex space-x-4">
+                                <span class="flex cursor-pointer" @click="isSelectModalOpen = true">
+                                    <p class="text-xl text-blue-600 font-bold">User Manual</p>
+                                    <img src="/images/selectpsoduct.svg" class="w-6 h-6 ml-2" />
+                                </span>
+                                <span class="flex cursor-pointer" @click="isVoucherModalOpen = true">
+                                    <p class="text-xl text-purple-600 font-bold">Voucher</p>
+                                    <img src="/images/selectpsoduct.svg" class="w-6 h-6 ml-2" />
+                                </span>
+                            </div>
                         </div>
 
                         <!-- BARCODE INPUT -->
@@ -329,6 +335,44 @@
                             </div>
                         </div>
 
+                        <!-- VOUCHER -->
+                        <div class="w-full my-5">
+                            <div class="relative flex items-center">
+                                <label for="voucher" class="sr-only">Voucher Code</label>
+                                <input
+                                    id="voucher"
+                                    v-model="voucherForm.code"
+                                    type="text"
+                                    placeholder="Enter Voucher Code"
+                                    class="w-full h-16 px-6 pr-40 text-lg text-gray-800 placeholder-gray-500 border-2 border-purple-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                />
+
+                                <template v-if="!appliedVoucher">
+                                    <button
+                                        type="button"
+                                        @click="submitVoucher"
+                                        class="absolute right-2 top-2 h-12 px-6 text-lg font-semibold text-white uppercase bg-purple-600 rounded-full hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    >
+                                        Apply Voucher
+                                    </button>
+                                </template>
+                                <template v-else>
+                                    <button
+                                        type="button"
+                                        @click="removeVoucher"
+                                        class="absolute right-2 top-2 h-12 px-6 text-lg font-semibold text-white uppercase bg-red-600 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    >
+                                        Remove Voucher
+                                    </button>
+                                </template>
+                            </div>
+                            <div v-if="appliedVoucher" class="mt-2 px-4 py-2 bg-purple-100 rounded-lg">
+                                <p class="text-sm text-purple-800 font-semibold">
+                                    Voucher Applied: Rs {{ formatNumber(appliedVoucher.amount) }}
+                                </p>
+                            </div>
+                        </div>
+
                         <!-- PAYMENT + SUBMIT -->
                         <div class="flex flex-col w-full space-y-8">
                             <div class="flex items-center justify-center w-full pt-8 space-x-8">
@@ -486,6 +530,7 @@
         :total="total"
         :custom_discount_type="custom_discount_type"
         :custom_discount="custom_discount"
+        :appliedVoucher="appliedVoucher"
     />
     <AlertModel v-model:open="isAlertModalOpen" :message="message" />
 
@@ -496,6 +541,12 @@
         :sizes="sizes"
         @selected-products="handleSelectedProducts"
     />
+
+    <SelectVoucherModel
+        v-model:open="isVoucherModalOpen"
+        @selected-vouchers="handleSelectedVouchers"
+    />
+
     <Footer />
 </template>
 
@@ -511,6 +562,7 @@ import { Head, Link } from "@inertiajs/vue3";
 import axios from "axios";
 import CurrencyInput from "@/Components/custom/CurrencyInput.vue";
 import SelectProductModel from "@/Components/custom/SelectProductModel.vue";
+import SelectVoucherModel from "@/Components/custom/SelectVoucherModel.vue";
 import { generateOrderId } from "@/Utils/Other.js";
 
 const product = ref(null);
@@ -520,9 +572,11 @@ const isSuccessModalOpen = ref(false);
 const isAlertModalOpen = ref(false);
 const message = ref("");
 const appliedCoupon = ref(null);
+const appliedVoucher = ref(null);
 const cash = ref(0);
 const custom_discount = ref(0);
 const isSelectModalOpen = ref(false);
+const isVoucherModalOpen = ref(false);
 const custom_discount_type = ref("percent");
 const orderid = computed(() => generateOrderId());
 
@@ -573,9 +627,48 @@ const removeCoupon = () => {
     couponForm.code = "";
 };
 
+const removeVoucher = () => {
+    appliedVoucher.value = null;
+    voucherForm.code = "";
+};
+
+const submitVoucher = async () => {
+    try {
+        const response = await axios.post('/pos/get-voucher', {
+            code: voucherForm.code,
+            total: parseFloat(total.value),
+        });
+
+        const { voucher: fetchedVoucher, error: fetchedError } = response.data;
+
+        if (fetchedVoucher) {
+            appliedVoucher.value = fetchedVoucher;
+        } else {
+            isAlertModalOpen.value = true;
+            message.value = fetchedError || 'Invalid voucher code';
+        }
+    } catch (err) {
+        if (err.response?.status === 422) {
+            isAlertModalOpen.value = true;
+            message.value = err.response.data.message;
+        } else {
+            isAlertModalOpen.value = true;
+            message.value = 'An error occurred while validating voucher';
+        }
+    }
+};
+
 const incrementQuantity = (id) => {
     const p = products.value.find((item) => item.id === id);
-    if (p) p.quantity += 1;
+    if (p) {
+        // For vouchers, check if we can increment
+        if (p.is_voucher && p.quantity >= p.stock_quantity) {
+            isAlertModalOpen.value = true;
+            message.value = `Only ${p.stock_quantity} vouchers available`;
+            return;
+        }
+        p.quantity += 1;
+    }
 };
 
 const decrementQuantity = (id) => {
@@ -584,7 +677,8 @@ const decrementQuantity = (id) => {
 };
 
 const submitOrder = async () => {
-    if (balance.value < 0) {
+    // Only check cash if payment method is "Cash"
+    if (selectedPaymentMethod.value === "Cash" && balance.value < 0) {
         isAlertModalOpen.value = true;
         message.value = "Cash is not enough";
         return;
@@ -600,6 +694,8 @@ const submitOrder = async () => {
             cash: cash.value,
             custom_discount: custom_discount.value,
             custom_discount_type: custom_discount_type.value,
+            voucher_id: appliedVoucher.value ? appliedVoucher.value.id : null,
+            voucher_amount: appliedVoucher.value ? appliedVoucher.value.amount : 0,
         });
         isSuccessModalOpen.value = true;
         console.log(response.data);
@@ -662,10 +758,20 @@ const total = computed(() => {
 });
 
 const balance = computed(() => {
-    if (cash.value == null || cash.value === 0) {
-        return 0;
+    // For card payment, balance is always 0
+    if (selectedPaymentMethod.value === 'card') {
+        return '0.00';
     }
-    return (parseFloat(cash.value) - parseFloat(total.value)).toFixed(2);
+    
+    const totalValue = parseFloat(total.value) || 0;
+    const voucherAmount = appliedVoucher.value ? parseFloat(appliedVoucher.value.amount) : 0;
+    const cashValue = parseFloat(cash.value) || 0;
+    
+    // Total after voucher payment
+    const amountAfterVoucher = totalValue - voucherAmount;
+    
+    // Balance = cash - remaining amount after voucher
+    return (cashValue - amountAfterVoucher).toFixed(2);
 });
 
 const form = useForm({
@@ -676,6 +782,17 @@ const form = useForm({
 const couponForm = useForm({
     code: "",
 });
+
+const voucherForm = useForm({
+    code: "",
+});
+
+const formatNumber = (num) => {
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(num);
+};
 
 // barcode scanner
 let barcode = "";
@@ -897,6 +1014,41 @@ const handleColorChange = (item) => {
         }
     });
 };
+
+const handleSelectedVouchers = (selectedVoucherCategories) => {
+    selectedVoucherCategories.forEach((voucherCategory) => {
+        // Add voucher as a product-like item to the cart
+        const voucherProduct = {
+            id: `voucher-${voucherCategory.id}`,
+            name: `${voucherCategory.name} Gift Voucher`,
+            selling_price: voucherCategory.amount,
+            cost_price: 0,
+            quantity: 1,
+            apply_discount: false,
+            is_voucher: true,
+            voucher_category_id: voucherCategory.id,
+            stock_quantity: voucherCategory.available_count,
+        };
+
+        // Check if this voucher category is already in cart
+        const existingVoucher = products.value.find(
+            (item) => item.is_voucher && item.voucher_category_id === voucherCategory.id
+        );
+
+        if (existingVoucher) {
+            // Increment quantity if not exceeding available vouchers
+            if (existingVoucher.quantity < voucherCategory.available_count) {
+                existingVoucher.quantity += 1;
+            } else {
+                isAlertModalOpen.value = true;
+                message.value = `Only ${voucherCategory.available_count} vouchers available for ${voucherCategory.name}`;
+            }
+        } else {
+            products.value.push(voucherProduct);
+        }
+    });
+};
+
 const shouldShowColorSelect = (item) => {
     // if it was selected manually → DO NOT show color select
     if (item.from_manual) {

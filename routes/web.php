@@ -12,13 +12,13 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\SizeController;
-
 use App\Http\Controllers\QuotationController;
-
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\StockTransactionController;
 use App\Http\Controllers\TransactionHistoryController;
 use App\Http\Controllers\ManualPosController;
+use App\Http\Controllers\VoucherController;
+use App\Http\Controllers\VoucherCategoryController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -88,6 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
     Route::post('/pos', [PosController::class, 'getProduct'])->name('pos.getProduct');
     Route::post('/get-coupon', [PosController::class, 'getCoupon'])->name('pos.getCoupon');
+    Route::post('/pos/get-voucher', [PosController::class, 'getVoucher'])->name('pos.getVoucher');
     Route::post('/pos/submit', [PosController::class, 'submit'])->name('pos.checkout');
     Route::resource('payment', PaymentController::class);
     Route::resource('reports', ReportController::class);
@@ -107,6 +108,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/quotation', QuotationController::class);
     Route::post('/api/save-quotation', [QuotationController::class, 'saveQuotationPdf']);
 
+    // Voucher routes
+    Route::resource('vouchers', VoucherController::class);
+    Route::get('vouchers/category/{voucherCategory}', [VoucherController::class, 'show'])->name('vouchers.category.show');
+    Route::post('vouchers/{voucher}/mark-used', [VoucherController::class, 'markAsUsed'])->name('vouchers.markAsUsed');
+    Route::resource('voucher-categories', VoucherCategoryController::class);
+    Route::get('/api/voucher-categories', [VoucherCategoryController::class, 'getCategories'])->name('api.voucher-categories');
 
 
  Route::get('/add_promotion', [ProductController::class, 'addPromotion']);
