@@ -613,6 +613,114 @@
   </div>
 </div>
 
+<!-- Voucher Summary Section -->
+<div class="w-full bg-white border-4 border-black rounded-xl p-6 mt-8">
+  <h2 class="text-2xl font-semibold text-slate-700 text-center pb-4">
+    Voucher Summary
+  </h2>
+
+  <!-- Overall Summary Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+    <div class="py-4 px-4 border-2 border-purple-600 rounded-xl bg-purple-100 text-center">
+      <h3 class="text-sm font-bold text-gray-700">Total Vouchers</h3>
+      <p class="text-2xl font-bold text-purple-600">{{ voucherSummary.total_vouchers || 0 }}</p>
+    </div>
+    <div class="py-4 px-4 border-2 border-blue-600 rounded-xl bg-blue-100 text-center">
+      <h3 class="text-sm font-bold text-gray-700">Sold</h3>
+      <p class="text-2xl font-bold text-blue-600">{{ voucherSummary.sold_vouchers || 0 }}</p>
+    </div>
+    <div class="py-4 px-4 border-2 border-green-600 rounded-xl bg-green-100 text-center">
+      <h3 class="text-sm font-bold text-gray-700">Active</h3>
+      <p class="text-2xl font-bold text-green-600">{{ voucherSummary.active_vouchers || 0 }}</p>
+    </div>
+    <div class="py-4 px-4 border-2 border-orange-600 rounded-xl bg-orange-100 text-center">
+      <h3 class="text-sm font-bold text-gray-700">Used</h3>
+      <p class="text-2xl font-bold text-orange-600">{{ voucherSummary.used_vouchers || 0 }}</p>
+    </div>
+    <div class="py-4 px-4 border-2 border-gray-600 rounded-xl bg-gray-100 text-center">
+      <h3 class="text-sm font-bold text-gray-700">Inactive</h3>
+      <p class="text-2xl font-bold text-gray-600">{{ voucherSummary.inactive_vouchers || 0 }}</p>
+    </div>
+    <div class="py-4 px-4 border-2 border-emerald-600 rounded-xl bg-emerald-100 text-center">
+      <h3 class="text-sm font-bold text-gray-700">Total Revenue</h3>
+      <p class="text-xl font-bold text-emerald-600">{{ (voucherSummary.total_revenue || 0).toFixed(2) }} LKR</p>
+    </div>
+  </div>
+
+  <!-- Detailed Table -->
+  <div class="overflow-x-auto border rounded-xl mt-4">
+    <table class="w-full text-gray-800 bg-white border border-gray-300 rounded-lg shadow-md table-auto">
+      <thead>
+        <tr class="bg-gradient-to-r from-purple-700 via-purple-600 to-purple-700 text-white text-[14px] border-b border-purple-800">
+          <th class="p-3 text-left font-semibold">#</th>
+          <th class="p-3 text-left font-semibold">Category</th>
+          <th class="p-3 text-center font-semibold">Amount (LKR)</th>
+          <th class="p-3 text-center font-semibold">Total Vouchers</th>
+          <th class="p-3 text-center font-semibold">Sold</th>
+          <th class="p-3 text-center font-semibold">Active</th>
+          <th class="p-3 text-center font-semibold">Used</th>
+          <th class="p-3 text-center font-semibold">Inactive</th>
+          <th class="p-3 text-center font-semibold">Revenue (LKR)</th>
+          <th class="p-3 text-center font-semibold">Status</th>
+        </tr>
+      </thead>
+      <tbody class="text-[12px] font-medium">
+        <tr
+          v-for="(category, index) in voucherCategories"
+          :key="index"
+          class="border-b transition duration-200 hover:bg-gray-100"
+        >
+          <td class="p-3 text-center">{{ index + 1 }}</td>
+          <td class="p-3 font-bold">{{ category.category_name }}</td>
+          <td class="p-3 text-center">{{ Number(category.amount || 0).toFixed(2) }}</td>
+          <td class="p-3 text-center font-semibold">{{ category.total_vouchers }}</td>
+          <td class="p-3 text-center">
+            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-semibold">
+              {{ category.sold_vouchers }}
+            </span>
+          </td>
+          <td class="p-3 text-center">
+            <span class="bg-green-100 text-green-800 px-2 py-1 rounded font-semibold">
+              {{ category.active_vouchers }}
+            </span>
+          </td>
+          <td class="p-3 text-center">
+            <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded font-semibold">
+              {{ category.used_vouchers }}
+            </span>
+          </td>
+          <td class="p-3 text-center">
+            <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded font-semibold">
+              {{ category.inactive_vouchers }}
+            </span>
+          </td>
+          <td class="p-3 text-center font-bold text-green-600">{{ Number(category.total_revenue || 0).toFixed(2) }}</td>
+          <td class="p-3 text-center">
+            <span :class="{
+              'bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold': category.is_active,
+              'bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-semibold': !category.is_active
+            }">
+              {{ category.is_active ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="bg-gray-100 font-bold text-[13px]">
+          <td colspan="3" class="p-3 text-right">Total:</td>
+          <td class="p-3 text-center">{{ voucherSummary.total_vouchers || 0 }}</td>
+          <td class="p-3 text-center">{{ voucherSummary.sold_vouchers || 0 }}</td>
+          <td class="p-3 text-center">{{ voucherSummary.active_vouchers || 0 }}</td>
+          <td class="p-3 text-center">{{ voucherSummary.used_vouchers || 0 }}</td>
+          <td class="p-3 text-center">{{ voucherSummary.inactive_vouchers || 0 }}</td>
+          <td class="p-3 text-center text-green-600">{{ (voucherSummary.total_revenue || 0).toFixed(2) }}</td>
+          <td class="p-3"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
 <!-- Batch Management -->
 
   </div>
@@ -668,6 +776,8 @@ const props = defineProps({
   endDate: { type: String, default: "" },
   categorySales: { type: Object, required: true },
   employeeSalesSummary: { type: Object, required: true },
+  voucherCategories: { type: Array, default: () => [] },
+  voucherSummary: { type: Object, default: () => ({}) },
 });
 
 // Modal state for viewing sale items
