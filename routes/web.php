@@ -108,10 +108,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/quotation', QuotationController::class);
     Route::post('/api/save-quotation', [QuotationController::class, 'saveQuotationPdf']);
 
-    // Voucher routes
-    Route::resource('vouchers', VoucherController::class);
+    // Voucher routes - Custom routes must come BEFORE resource route
     Route::get('vouchers/category/{voucherCategory}', [VoucherController::class, 'show'])->name('vouchers.category.show');
     Route::post('vouchers/{voucher}/mark-used', [VoucherController::class, 'markAsUsed'])->name('vouchers.markAsUsed');
+    Route::resource('vouchers', VoucherController::class);
     Route::resource('voucher-categories', VoucherCategoryController::class);
     Route::get('/api/voucher-categories', [VoucherCategoryController::class, 'getCategories'])->name('api.voucher-categories');
 
