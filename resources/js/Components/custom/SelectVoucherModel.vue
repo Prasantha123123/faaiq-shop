@@ -74,10 +74,10 @@
                 </div>
               </template>
               <template v-else>
-                <template v-if="filteredCategories.length > 0">
+                <template v-if="pagedCategories.length > 0">
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div
-                      v-for="category in filteredCategories"
+                      v-for="category in pagedCategories"
                       :key="category.id"
                       @click="category.available_count > 0 && selectVoucher(category)"
                       :class="[
@@ -133,7 +133,26 @@
                     </div>
                   </div>
                   
-                  <div class="flex items-center justify-end mt-8">
+                  <div class="flex items-center justify-between mt-8 text-sm text-gray-600">
+                    <span>
+                      Showing <strong>{{ pagedCategories.length }}</strong> of <strong>{{ availableCategories.length }}</strong> categories
+                    </span>
+                    <div class="space-x-2">
+                      <button
+                        class="px-4 py-2 rounded border text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="page === 1"
+                        @click="page = Math.max(1, page - 1)"
+                      >Prev</button>
+                      <span class="font-semibold">Page {{ page }} / {{ totalPages }}</span>
+                      <button
+                        class="px-4 py-2 rounded border text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="page === totalPages"
+                        @click="page = Math.min(totalPages, page + 1)"
+                      >Next</button>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-end mt-4">
                     <button
                       class="px-8 py-3 text-lg font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                       @click.prevent="closeModal(true)"
@@ -174,6 +193,13 @@ const search = ref("");
 const statusFilter = ref("");
 const voucherCategories = ref([]);
 const selectedVouchers = ref([]);
+const page = ref(1);
+const pageSize = 6;
+
+// Filter out categories with zero available so we don't show sold-out cards
+const availableCategories = computed(() => {
+  return voucherCategories.value.filter((cat) => (cat.available_count || 0) > 0);
+});
 
 const formatNumber = (num) => {
   return new Intl.NumberFormat('en-US', {
@@ -192,7 +218,7 @@ const selectVoucher = (category) => {
 };
 
 const filteredCategories = computed(() => {
-  let filtered = voucherCategories.value;
+  let filtered = availableCategories.value;
 
   // Filter by search
   if (search.value) {
@@ -210,6 +236,16 @@ const filteredCategories = computed(() => {
   }
 
   return filtered;
+});
+
+const totalPages = computed(() => {
+  const total = filteredCategories.value.length;
+  return total === 0 ? 1 : Math.ceil(total / pageSize);
+});
+
+const pagedCategories = computed(() => {
+  const start = (page.value - 1) * pageSize;
+  return filteredCategories.value.slice(start, start + pageSize);
 });
 
 const filterVouchers = () => {

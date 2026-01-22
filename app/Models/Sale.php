@@ -67,4 +67,9 @@ class Sale extends Model
     {
         return $this->belongsTo(User::class, 'user_id','id');
     }
+
+    public function redeemedVoucher()
+    {
+        return $this->belongsTo(Voucher::class, 'redeemed_voucher_id', 'id');
+    }
 }

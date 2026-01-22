@@ -114,7 +114,12 @@
                                     ).toFixed(2)
                                 }}
                              </td>
-                            <td class="p-4 font-bold border-gray-200">{{ history.payment_method || "N/A" }}</td>
+                            <td class="p-4 font-bold border-gray-200">
+                                <span v-if="history.paid_with_voucher && history.redeemed_voucher && history.redeemed_voucher.voucher_category" style="color: #8B5CF6; font-weight: bold;">
+                                    Voucher ({{ history.redeemed_voucher.voucher_category.name }})
+                                </span>
+                                <span v-else>{{ history.payment_method || "N/A" }}</span>
+                            </td>
                             <td class="p-4 font-bold border-gray-200">{{ history.sale_date || "N/A" }}</td>
                             <td class="p-4 font-bold border-gray-200">
                                 <button
@@ -220,12 +225,54 @@ const printReceipt = (history) => {
   }
   
   const total = subTotal - totalDiscount - customDiscountAmount;
+  const voucherPaymentAmount = Number(history.voucher_payment_amount || 0);
   const cash = Number(history.cash || 0);
-  const balance = cash - total; // Calculate balance as cash - total
+  
+  // Calculate balance based on payment method
+  let balance = 0;
+  if (history.paid_with_voucher) {
+    // If paid with voucher, balance is always 0 (voucher covered the amount)
+    balance = 0;
+  } else {
+    // If paid with cash, calculate balance as cash - total
+    balance = cash - total;
+  }
 
   const productRows = (history.sale_items || [])
-    .map((item) => {
-      const productName = item.product ? item.product.name : 'N/A';
+    .map((item, index) => {
+      // Check if this is a voucher sale item (no product) or regular product
+      let productName = 'N/A';
+      
+      if (item.product) {
+        productName = item.product.name;
+      } else if (history.has_vouchers) {
+        // If no product and sale has vouchers, get voucher category name
+        let voucherCategories = history.voucher_categories;
+        
+        // Parse if it's a string
+        if (typeof voucherCategories === 'string') {
+          try {
+            voucherCategories = JSON.parse(voucherCategories);
+          } catch (e) {
+            voucherCategories = [];
+          }
+        }
+        
+        // Get the voucher category name for this item
+        if (Array.isArray(voucherCategories) && voucherCategories.length > 0) {
+          const category = voucherCategories[index] || voucherCategories[0];
+          if (category && typeof category === 'object' && category.name) {
+            productName = category.name;
+          } else if (typeof category === 'string') {
+            productName = category;
+          } else {
+            productName = 'Voucher';
+          }
+        } else {
+          productName = 'Voucher';
+        }
+      }
+      
       const productColor = item.product && item.product.color ? ` (${item.product.color.name})` : '';
       const quantity = Number(item.quantity || 0);
       const unitPrice = Number(item.unit_price || 0).toFixed(2);
@@ -422,10 +469,17 @@ const printReceipt = (history) => {
                 <span>Total</span>
                 <span>${total.toFixed(2)} LKR</span>
             </div>
+            ${history.paid_with_voucher && history.redeemed_voucher && history.redeemed_voucher.voucher_category ? `
+            <div style="font-weight: bold; color: #8B5CF6;">
+                <span>Paid by Voucher (${history.redeemed_voucher.voucher_category.name})</span>
+                <span>${voucherPaymentAmount.toFixed(2)} LKR</span>
+            </div>
+            ` : `
             <div>
                 <span>Cash</span>
                 <span>${cash.toFixed(2)} LKR</span>
             </div>
+            `}
             <div style="font-weight: bold;">
                 <span>Balance</span>
                 <span>${balance.toFixed(2)} LKR</span>

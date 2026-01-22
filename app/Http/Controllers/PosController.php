@@ -190,18 +190,18 @@ class PosController extends Controller
         $couponDiscount = isset($request->input('appliedCoupon')['discount']) ?
             floatval($request->input('appliedCoupon')['discount']) : 0;
 
-        // Get voucher discount if applied
-        $voucherDiscount = 0;
+        // Get voucher payment amount if applied (NOT a discount, it's a payment method)
+        $voucherPaymentAmount = 0;
         $voucherId = $request->input('voucher_id');
         if ($voucherId) {
             $voucher = Voucher::with('voucherCategory')->find($voucherId);
             if ($voucher && !$voucher->is_used) {
-                $voucherDiscount = floatval($voucher->voucherCategory->amount);
+                $voucherPaymentAmount = floatval($voucher->voucherCategory->amount);
             }
         }
 
-        // Calculate total combined discount
-        $totalDiscount = $productDiscounts + $couponDiscount + $voucherDiscount;
+        // Calculate total combined discount (excluding voucher as it's a payment method)
+        $totalDiscount = $productDiscounts + $couponDiscount;
 
         DB::beginTransaction(); // Start a transaction
 

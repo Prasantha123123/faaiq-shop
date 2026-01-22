@@ -223,10 +223,10 @@
     </div>
 
 
-     <div class="grid w-full md:grid-cols-3 grid-cols-2 gap-8">
+     <div class="grid w-full md:grid-cols-4 grid-cols-2 gap-8">
             <!-- Total Products -->
             <div
-                class="py-6 flex flex-col justify-center items-center border-2 border-[#ffb224] w-full space-y-4 rounded-2xl bg-[#ffb224] shadow-lg">
+                class="py-6 flex flex-col justify-center items-center border-2 border-[#ffb224] w-full space-y-4 rounded-2xl bg-[#ffb224] shadow-lg transform transition-transform duration-300 hover:-translate-y-4">
                 <div class="flex flex-col items-center text-center justify-center">
                     <h2 class="text-xl font-extrabold tracking-wide text-black uppercase">
                         Total Quantity In Stock:
@@ -239,7 +239,7 @@
             <!-- Average Transaction Value -->
             <!-- Number of Transactions -->
             <div
-                class="py-6 flex flex-col justify-center items-center border-2 border-[#41ec16] w-full space-y-4 rounded-2xl bg-[#41ec16] shadow-lg ">
+                class="py-6 flex flex-col justify-center items-center border-2 border-[#41ec16] w-full space-y-4 rounded-2xl bg-[#41ec16] shadow-lg transform transition-transform duration-300 hover:-translate-y-4">
                 <div class="flex flex-col items-center text-center justify-center">
                     <h2 class="text-xl font-extrabold tracking-wide text-black uppercase">
                         Total Selling Price In Stock:
@@ -251,7 +251,7 @@
             </div>
             <!-- Total Customers -->
             <div
-                class="py-6 flex flex-col justify-center items-center border-2 border-[#3e41ff] w-full space-y-4 rounded-2xl bg-[#3e41ff] shadow-lg ">
+                class="py-6 flex flex-col justify-center items-center border-2 border-[#3e41ff] w-full space-y-4 rounded-2xl bg-[#3e41ff] shadow-lg transform transition-transform duration-300 hover:-translate-y-4">
                 <div class="flex flex-col items-center text-center justify-center">
                     <h2 class="text-xl font-extrabold tracking-wide text-black uppercase">
                         Total Cost Price In Stock:
@@ -260,6 +260,19 @@
                 <div class="flex flex-col items-center justify-center">
                     <p class="text-2xl font-bold text-black">
                         {{ totalRetailValue.toFixed(2) }} LKR</p>
+                </div>
+            </div>
+            <!-- Voucher Revenue -->
+            <div
+                class="py-6 flex flex-col justify-center items-center border-2 border-[#8B5CF6] w-full space-y-4 rounded-2xl bg-[#8B5CF6] shadow-lg transform transition-transform duration-300 hover:-translate-y-4">
+                <div class="flex flex-col items-center text-center justify-center">
+                    <h2 class="text-xl font-extrabold tracking-wide text-black uppercase">
+                        Total Voucher Revenue:
+                    </h2>
+                </div>
+                <div class="flex flex-col items-center justify-center">
+                    <p class="text-2xl font-bold text-black">
+                        {{ (voucherSummary.total_revenue || 0).toFixed(2) }} LKR</p>
                 </div>
             </div>
         </div>

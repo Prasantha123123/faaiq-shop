@@ -5,7 +5,7 @@
 
     <div class="w-full space-y-6">
       <div class="flex justify-between items-center">
-        <h1 class="text-4xl font-bold text-gray-800">Vouchers Management*</h1>
+        <h1 class="text-4xl font-bold text-gray-800">Vouchers Management</h1>
         <div class="flex space-x-4">
           <Link
             href="/voucher-categories"
