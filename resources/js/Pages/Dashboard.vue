@@ -362,7 +362,7 @@
               />
             </div>
             <div class="text-container">
-              <p class="title">Vouchers*</p>
+              <p class="title">Vouchers</p>
               <p class="description">
                 Generate and manage vouchers with unique codes. Create voucher categories and track issued vouchers with ease.</p>
             </div>
