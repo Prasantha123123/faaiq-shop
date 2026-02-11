@@ -563,7 +563,15 @@ import axios from "axios";
 import CurrencyInput from "@/Components/custom/CurrencyInput.vue";
 import SelectProductModel from "@/Components/custom/SelectProductModel.vue";
 import SelectVoucherModel from "@/Components/custom/SelectVoucherModel.vue";
-import { generateOrderId } from "@/Utils/Other.js";
+
+const props = defineProps({
+    loggedInUser: Object,
+    allcategories: Array,
+    allemployee: Array,
+    colors: Array,
+    sizes: Array,
+    nextOrderId: String,
+});
 
 const product = ref(null);
 const error = ref(null);
@@ -578,7 +586,7 @@ const custom_discount = ref(0);
 const isSelectModalOpen = ref(false);
 const isVoucherModalOpen = ref(false);
 const custom_discount_type = ref("percent");
-const orderid = computed(() => generateOrderId());
+const orderid = ref(props.nextOrderId); // Initialize with predicted next order ID
 
 // Store colors only for that scanned barcode
 const barcodeColorMap = ref({});
@@ -589,14 +597,6 @@ const handleModalOpenUpdate = (newValue) => {
         refreshData();
     }
 };
-
-const props = defineProps({
-    loggedInUser: Object,
-    allcategories: Array,
-    allemployee: Array,
-    colors: Array,
-    sizes: Array,
-});
 
 const discount = ref(0);
 
@@ -690,13 +690,18 @@ const submitOrder = async () => {
             employee_id: employee_id.value,
             paymentMethod: selectedPaymentMethod.value,
             userId: props.loggedInUser.id,
-            orderid: orderid.value,
             cash: cash.value,
             custom_discount: custom_discount.value,
             custom_discount_type: custom_discount_type.value,
             voucher_id: appliedVoucher.value ? appliedVoucher.value.id : null,
             voucher_amount: appliedVoucher.value ? appliedVoucher.value.amount : 0,
         });
+        
+        // Set the order ID from the response
+        if (response.data.sale && response.data.sale.order_id) {
+            orderid.value = response.data.sale.order_id;
+        }
+        
         isSuccessModalOpen.value = true;
         console.log(response.data);
     } catch (error) {
