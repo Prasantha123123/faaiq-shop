@@ -418,6 +418,7 @@
           <th class="p-3 text-left font-semibold">Name</th>
           <th class="p-3 text-center font-semibold">QTY</th>
           <th class="p-3 text-center font-semibold">Sales QTY</th>
+          <th class="p-3 text-center font-semibold">Balance Stock</th>
           <th class="p-3 text-center font-semibold">Cost Price (LKR)</th>
           <th class="p-3 text-center font-semibold">Selling Price (LKR)</th>
           <th class="p-3 text-center font-semibold">Profit (LKR)</th>
@@ -437,6 +438,7 @@
           <td class="p-3 font-bold">{{ product.name || "N/A" }}</td>
           <td class="p-3 text-center">{{ product.stock_quantity }}</td>
           <td class="p-3 text-center">{{ product.sales_qty || "0" }}</td>
+          <td class="p-3 text-center">{{ product.stock_quantity - (product.sales_qty || 0) }}</td>
           <td class="p-3 text-center">{{ product.cost_price || "N/A" }}</td>
           <td class="p-3 text-center">{{ product.selling_price || "N/A" }}</td>
           <td class="p-3 text-center">
@@ -893,6 +895,7 @@ const downloadPDFTable = () => {
     "Name",
     "QTY",
     "Sales QTY",
+    "Balance Stock",
     "Cost Price (LKR)",
     "Selling Price (LKR)",
     "Profit (LKR)",
@@ -907,6 +910,7 @@ const downloadPDFTable = () => {
     product.name || "N/A",
     product.stock_quantity || "N/A",
     product.sales_qty || "0",
+    product.stock_quantity - (product.sales_qty || 0),
     product.cost_price || "N/A",
     product.selling_price || "N/A",
     product.selling_price - product.cost_price || 0,
@@ -918,10 +922,10 @@ const downloadPDFTable = () => {
   ]);
 
   // Calculate total sum of "Total Price"
-  const totalSum = tableRows.reduce((sum, row) => sum + row[9], 0);
+  const totalSum = tableRows.reduce((sum, row) => sum + row[10], 0);
 
   // Add a total row at the end
-  tableRows.push(["", "Total", "", "", "", "", "", "", "", totalSum.toFixed(2)]);
+  tableRows.push(["", "Total", "", "", "", "", "", "", "", "", totalSum.toFixed(2)]);
 
   // Adjust column widths
   doc.autoTable({
@@ -933,15 +937,16 @@ const downloadPDFTable = () => {
     headStyles: { fillColor: [44, 62, 80] },
     columnStyles: {
       0: { cellWidth: 8 },  // #
-      1: { cellWidth: 30 },  // Name (Increased for better visibility)
-      2: { cellWidth: 12 },  // QTY
-      3: { cellWidth: 15 },  // Sales QTY
-      4: { cellWidth: 25 },  // Cost Price
-      5: { cellWidth: 25 },  // Selling Price
-      6: { cellWidth: 20 },  // Profit
-      7: { cellWidth: 15 },  // Discount
-      8: { cellWidth: 25 },  // Retail Value (Increased to prevent cut-off)
-      9: { cellWidth: 30 },  // Total Price (Increased to make it visible)
+      1: { cellWidth: 28 },  // Name
+      2: { cellWidth: 10 },  // QTY
+      3: { cellWidth: 13 },  // Sales QTY
+      4: { cellWidth: 16 },  // Balance Stock
+      5: { cellWidth: 22 },  // Cost Price
+      6: { cellWidth: 22 },  // Selling Price
+      7: { cellWidth: 18 },  // Profit
+      8: { cellWidth: 13 },  // Discount
+      9: { cellWidth: 22 },  // Retail Value
+      10: { cellWidth: 25 }, // Total Price
     },
     margin: { left: 5, right: 10, top: 20 },
   });
